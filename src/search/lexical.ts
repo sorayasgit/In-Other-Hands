@@ -25,7 +25,7 @@ export function tokens(text: string): string[] {
 }
 
 /** Field weights: what people remember best (titles, their own notes) counts most. */
-const FIELDS: [keyof Card | 'author' | 'sourceName', number][] = [
+const FIELDS: [keyof Card | 'author' | 'sourceName' | 'purpose', number][] = [
   ['title', 3],
   ['note', 2],
   ['quote', 2],
@@ -35,20 +35,33 @@ const FIELDS: [keyof Card | 'author' | 'sourceName', number][] = [
   ['ocr', 1.2],
   ['body', 1],
   ['tags', 1.5],
+  ['collections', 0.8],
+  ['purpose', 0.8],
   ['author', 1.5],
   ['sourceName', 1],
 ];
 
-function fieldText(card: Card, f: (typeof FIELDS)[number][0]): string {
+/** Extra text a card is known by that isn't on the card itself (its collections' purposes). */
+export type ContextOf = (card: Card) => string;
+
+function fieldText(card: Card, f: (typeof FIELDS)[number][0], contextOf?: ContextOf): string {
+  if (f === 'purpose') return contextOf?.(card) ?? '';
   if (f === 'author') return card.source?.author ?? '';
   if (f === 'sourceName') return card.source?.name ?? '';
   if (f === 'tags') return (card.tags ?? []).join(' ');
+  if (f === 'collections') return (card.collections ?? []).join(' ');
   const v = card[f as keyof Card];
   return typeof v === 'string' ? v : '';
 }
 
+/** Fields that describe where a card lives, not what it says. They add matches but don't make a word
+ * look common: otherwise a collection called "Design Inspiration" would dilute "design" everywhere. */
+const CONTEXT_FIELDS = new Set(['collections', 'purpose']);
+
 interface Doc {
   tf: Map<string, number>;
+  /** Terms from the card's own content: the ones counted for document frequency. */
+  own: Set<string>;
   len: number;
 }
 
@@ -58,29 +71,33 @@ export class LexicalIndex {
   private df = new Map<string, number>();
   private avgLen = 1;
 
-  constructor(cards: Card[]) {
+  constructor(cards: Card[], private contextOf?: ContextOf) {
     for (const c of cards) this.add(c);
   }
 
   add(card: Card) {
     this.remove(card.id);
     const tf = new Map<string, number>();
+    const own = new Set<string>();
     let len = 0;
     for (const [f, w] of FIELDS) {
-      for (const t of tokens(fieldText(card, f))) {
+      for (const t of tokens(fieldText(card, f, this.contextOf))) {
         tf.set(t, (tf.get(t) ?? 0) + w);
-        len += w;
+        if (!CONTEXT_FIELDS.has(f)) {
+          own.add(t);
+          len += w;
+        }
       }
     }
-    this.docs.set(card.id, { tf, len });
-    for (const t of tf.keys()) this.df.set(t, (this.df.get(t) ?? 0) + 1);
+    this.docs.set(card.id, { tf, own, len });
+    for (const t of own) this.df.set(t, (this.df.get(t) ?? 0) + 1);
     this.recomputeAvg();
   }
 
   remove(id: string) {
     const d = this.docs.get(id);
     if (!d) return;
-    for (const t of d.tf.keys()) this.df.set(t, (this.df.get(t) ?? 1) - 1);
+    for (const t of d.own) this.df.set(t, (this.df.get(t) ?? 1) - 1);
     this.docs.delete(id);
     this.recomputeAvg();
   }

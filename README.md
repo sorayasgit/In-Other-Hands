@@ -17,7 +17,7 @@ Needs Node ≥ 20.19 (developed on Node 24).
 ```bash
 npm install
 npm run dev        # http://localhost:5173
-npm test           # 26 tests: real-model search scenarios + canvas model
+npm test           # 34 tests: real-model search scenarios, collections, canvas model
 npm run embed      # rebuild src/data/library-vectors.json after editing library.json
 ```
 
@@ -38,6 +38,17 @@ npm run embed      # rebuild src/data/library-vectors.json after editing library
 Click × on any "reading this as" chip if the guess was wrong. **Wander** shuffles everything (the
 shuffle is in the URL, so it's repeatable). Open a card for *close in meaning*, *kept around the same
 time*, and which canvases it's on; edit its note and it's re-indexed immediately.
+
+**Collections** (contexts you'll come back to, not topics)
+
+| Do | Result |
+|---|---|
+| Collections → create one with only a purpose, e.g. *For planning the spring workshop on learning through curiosity and play* | "Might belong here" fills from the purpose alone; **+ Add** files a card |
+| Add a few cards | Suggestions blend what's in it with what it's for |
+| Open any card → Collections | One card, many collections; × removes it from one (the card stays) |
+| Search `references for packaging and print` in the library | Finds the Colour collection's cards by *why* it exists |
+| Rename, edit the purpose, delete | Rename updates every card; delete leaves the cards in the library |
+| Open as canvas | A new canvas with the collection's cards in a named group |
 
 **Canvas** (Canvases → "Warmth, for Harvest Co.")
 
@@ -71,6 +82,8 @@ src/search/engine.ts             Hybrid ranking: embeddings + BM25 + context; re
 src/search/searchService.ts      Engine singleton, Web Worker embedder, live re-indexing
 src/canvas/model.ts              Canvas document, pure operations, undo/redo history
 src/canvas/CanvasView.tsx        Camera, gestures, links, groups, persistence, AI suggestions
+src/data/collections.ts          Collections as contexts of return: derive, rename, delete
+src/ui/CollectionsView.tsx       Collections index, collection page, "might belong here"
 src/data/library.json            56 sample cards (original text; fictional sources except public-domain quotes)
 ```
 
@@ -78,6 +91,8 @@ src/data/library.json            56 sample cards (original text; fictional sourc
 
 - **No real capture.** Cards come from sample data plus notes kept from the canvas. Saving links,
   images (with real OCR/captioning) and imports are the next step.
+- **No shared network.** Sublime also suggests cards from other people's libraries; this app only
+  knows your own.
 - **Images are searched by their stored caption, OCR text and palette**, not by pixels. Real image
   embeddings (e.g. CLIP) would let a photo be found by what it looks like.
 - **Storage is `localStorage`.** Fine for hundreds of cards; move to IndexedDB or a server, with the

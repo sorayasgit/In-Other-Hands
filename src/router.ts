@@ -53,3 +53,5 @@ export function navigate(path: string, params?: Record<string, string | undefine
     listeners.forEach((l) => l());
   } else location.hash = next;
 }
+
+export const collectionHref = (name: string, params?: Record<string, string | undefined>) => href(`/collection/${encodeURIComponent(name)}`, params);

@@ -105,6 +105,19 @@ export function deleteCanvas(id: string) {
   writeIndex();
 }
 
+/** A canvas that starts from a collection: its cards laid out in a loose grid inside a group. */
+export function createCanvasFromCollection(name: string, itemIds: string[]): CanvasDoc {
+  let doc = emptyCanvas(name);
+  const cols = Math.min(4, Math.max(1, Math.ceil(Math.sqrt(itemIds.length))));
+  itemIds.forEach((itemId, i) => {
+    [doc] = addCard(doc, itemId, (i % cols) * (CARD_W + 50), Math.floor(i / cols) * 400);
+  });
+  const rows = Math.ceil(itemIds.length / cols);
+  if (itemIds.length) [doc] = addFrame(doc, [{ x: 0, y: 0, w: cols * (CARD_W + 50) - 50, h: rows * 400 - 60 }], name);
+  saveCanvas(doc);
+  return doc;
+}
+
 /** Put a library card on a canvas (from outside the canvas view), to the right of what's there. */
 export function placeOnCanvas(canvasId: string, itemId: string) {
   const doc = loadCanvas(canvasId);

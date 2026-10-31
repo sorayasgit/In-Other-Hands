@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest';
+import { deriveCollections } from '../data/collections';
 import library from '../data/library.json';
 import vectorsFile from '../data/library-vectors.json';
 import type { Card } from '../data/types';
@@ -96,6 +97,26 @@ describe('refining without a conversation', () => {
     const top3 = r.results.slice(0, 3).map((x) => x.card.id);
     expect(top3).not.toContain('c15');
     expect(top3).not.toContain('c32');
+  });
+});
+
+describe('collections as contexts of return', () => {
+  it('searches inside one collection only', async () => {
+    const within = new Set((library as Card[]).filter((c) => c.collections?.includes('My Canon')).map((c) => c.id));
+    const r = await engine.search({ query: 'design', within, now: NOW });
+    expect(r.results.length).toBeGreaterThan(0);
+    expect(r.results.every((x) => within.has(x.card.id))).toBe(true);
+  });
+
+  it('finds cards by why their collection exists', async () => {
+    const purposes = deriveCollections(library as Card[], {});
+    const purposeOf = new Map(purposes.map((c) => [c.name, c.purpose ?? '']));
+    const vecs = new Map<string, CardVectors>();
+    for (const [id, v] of Object.entries(vectorsFile.cards)) vecs.set(id, { doc: decodeInt8(v.doc), passages: v.passages.map(decodeInt8) });
+    const withContext = new SearchEngine(library as Card[], vecs, localEmbedder, (c) => (c.collections ?? []).map((n) => purposeOf.get(n) ?? '').join(' '));
+    const r = await withContext.search({ query: 'references for packaging and print', now: NOW });
+    const top = r.results.slice(0, 5).map((x) => x.card);
+    expect(top.filter((c) => c.collections?.includes('Colour')).length).toBeGreaterThanOrEqual(3);
   });
 });
 

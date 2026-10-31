@@ -1,6 +1,6 @@
 import type { Card, CardType } from '../data/types';
 import { paletteMatch } from './colors';
-import { LexicalIndex, stem, tokens } from './lexical';
+import { LexicalIndex, stem, tokens, type ContextOf } from './lexical';
 import type { Embedder } from './model';
 import { cardPassages, type Passage, type PassageField } from './passages';
 import { understand, type Refinement, type TimeWindow, type Understanding } from './understand';
@@ -20,6 +20,8 @@ export interface SearchRequest {
   anchorId?: string;
   now?: number;
   limit?: number;
+  /** Only rank these card ids (search inside a collection). */
+  within?: ReadonlySet<string>;
 }
 
 export interface SearchResult {
@@ -77,13 +79,13 @@ export class SearchEngine {
   private vectors = new Map<string, CardVectors>();
   private lexical: LexicalIndex;
 
-  constructor(cards: Card[], vectors: Map<string, CardVectors>, private embedder?: Embedder) {
+  constructor(cards: Card[], vectors: Map<string, CardVectors>, private embedder?: Embedder, contextOf?: ContextOf) {
     for (const c of cards) {
       this.cards.set(c.id, c);
       this.passages.set(c.id, cardPassages(c));
     }
     this.vectors = vectors;
-    this.lexical = new LexicalIndex(cards);
+    this.lexical = new LexicalIndex(cards, contextOf);
   }
 
   setEmbedder(e: Embedder | undefined) {
@@ -107,6 +109,10 @@ export class SearchEngine {
     this.passages.delete(id);
     this.vectors.delete(id);
     this.lexical.remove(id);
+  }
+
+  vectorsOf(id: string): CardVectors | undefined {
+    return this.vectors.get(id);
   }
 
   vectorOf(id: string): Vec | undefined {
@@ -162,6 +168,7 @@ export class SearchEngine {
     const scored: Scored[] = [];
 
     for (const card of this.cards.values()) {
+      if (req.within && !req.within.has(card.id)) continue;
       const vecs = this.vectors.get(card.id);
       const ps = this.passages.get(card.id) ?? [];
       let sem = 0;

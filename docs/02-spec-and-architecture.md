@@ -16,6 +16,20 @@ Principles carried over from the reconnaissance (see `01-reconnaissance.md`), an
 | AI as quiet collaborator | AI fills a side panel and draws faint *possible* links; it never moves, adds or deletes your work |
 | Calm, editorial | Serif reading type, paper tones, one accent, no dashboards, no chat bubbles |
 
+### Measured against the founder's account
+
+The interview (`01-reconnaissance.md`, section C) points out where this app already matches Sublime's
+intent and where it doesn't yet:
+
+| Intent from the article | Here today | Gap |
+|---|---|---|
+| Related ideas appear the moment you open or save something | Card drawer: *close in meaning*, *kept around the same time* | Shows on open, not yet on save (there's no capture flow) |
+| A thought in, a stream of related ideas out | Recall search; a new collection's purpose works the same way | No standalone "related to this sentence" view |
+| Collections are contexts of return ("for the essay", "for the Harvest pitch") | Each collection has a *purpose*; cards are found by it; the purpose alone pulls in "might belong here" suggestions; a collection opens as a canvas | — |
+| Canvas suggests as you arrange | Ideas panel follows the selection; possible links on request | Kept selection-driven on purpose, so nothing interrupts unasked |
+| Foraging and hunting | Wander (seeded shuffle) and Recall | — |
+| Communal network of other people's libraries | — | Out of scope for a single-person local app |
+
 ---
 
 ## 1. Recall (search)

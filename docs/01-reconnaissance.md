@@ -11,11 +11,12 @@ Every claim below carries one tag:
   how it feels or that every user sees it.
 - **[site]** — stated on sublime.app marketing copy or in Sublime's own in-app copy.
 - **[inferred]** — my reasoning from code + copy. Plausible, unverified.
+- **[article]** — said by the founder in the Frey interview (section C), cross-checked against code.
 - **[unknown]** — could not be established without the signed-in app or the server.
 
-Not done: runtime observation of the signed-in app (no session was available), and the referenced
-article (not yet supplied). Everything server-side — the ranking model, embedding model, index —
-is invisible from the client and is **[unknown]** unless the copy says otherwise.
+Not done: runtime observation of the signed-in app (no session was available). Everything
+server-side — the ranking model, embedding model, index — is invisible from the client and is
+**[unknown]** unless the copy says otherwise.
 
 ## Artifacts inspected
 
@@ -154,6 +155,45 @@ Standard tldraw: wheel/trackpad pan & zoom, "Fit to content", grid toggle, frame
   library entities are different stores) **[inferred, strongly]**.
 
 ---
+
+## C. The founder's account (article)
+
+Source: Chuck Frey's interview with Sari Azout, *New Sublime app rethinks creative work with an
+AI-powered visual twist*, Mind Mapping Software Blog. Tagged **[article]**: what the founder says the
+product does or is for. Paraphrased here, not quoted.
+
+### Claims, checked against the code
+
+| Article says | Code evidence | Verdict |
+|---|---|---|
+| Saving something immediately shows related ideas, from your library **and other people's** | `v3/feed/related/` (by card or by free text); in-app copy says Canvas reaches "the broader Sublime network" | Consistent. The network half is server-side; how other people's cards are chosen is **[unknown]** |
+| One card can live in several collections without being copied | Collections are their own entities; canvas shapes reference a card by `uuid` | Consistent |
+| Collections answer "in what context will I revisit this?", not "what is it about?" | Collections are first-class (`v3/cx/…`, "Start with a collection" on canvas creation) | Consistent; the *purpose* is the article's framing |
+| Opening any card shows conceptually related cards | `related` feed keyed by card slug | Consistent |
+| On Canvas, Sublime suggests relevant ideas **as you arrange** | Sidebar opens on Related/Insights for the *selected* card or text | Partly: the code shows suggestions driven by selection. Whether anything appears without a click is **[unknown]** |
+| Two modes: foraging (no known purpose) and hunting (deliberate search) | `shuffle` + `shuffle_seed` ordering; `most_relevant` search | Consistent |
+| Capture fast, organise lightly later | Quick add (`v2/entities/quick_add/`), inbox route | Consistent |
+| Set an intention (a thought) → get a stream of related ideas | `POST v3/feed/related/` with `{ text }` | Consistent, and this is the same primitive as fuzzy search |
+| Canvas exists because Figma/Miro users copy-paste their inspiration in from elsewhere | Library search + drag-and-drop inside the editor | Consistent |
+| Free tier limits cards, libraries, canvases, summaries, insights | `paywall_to_add_canvases`, `insights/increase-insights-used` | Consistent |
+
+### What the article adds that the code can't show
+
+- **Why AI is there**: as the friend who says "this reminds me of…", appearing when it's useful.
+  Not tagging, not chat.
+- **Divergence over convergence**: most knowledge tools help you narrow down. Sublime is meant to
+  widen the field before a problem is even defined.
+- **The atomic unit is the insight**: every medium becomes a card, and seeing many cards at once is
+  what makes patterns visible.
+- **Values**: creativity over productivity, intention over attention, "we over me". The feel it
+  aims for is a library's calm with a café's serendipity.
+- **Collections grow into work**: the founder's own collections became an essay, a print
+  publication and a planned podcast.
+
+### Still unknown
+
+How network results are ranked and filtered, and what privacy rules govern them. Whether canvas
+suggestions ever appear without the user asking. What the insight lenses are generated from.
 
 ## Design philosophy, as the product expresses it
 

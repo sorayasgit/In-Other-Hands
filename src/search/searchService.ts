@@ -20,7 +20,12 @@ for (const [id, v] of Object.entries((vectorsFile as { cards: Record<string, { d
   precomputed.set(id, { doc: decodeInt8(v.doc), passages: v.passages.map(decodeInt8) });
 }
 
-export const engine = new SearchEngine(library.all(), precomputed);
+/** A card is also known by why its collections exist ("for the packaging pitch"). */
+const purposes = () => new Map(library.collections().map((c) => [c.name, c.purpose ?? '']));
+let purposeOf = purposes();
+const contextOf = (card: Card) => (card.collections ?? []).map((n) => purposeOf.get(n) ?? '').join(' ');
+
+export const engine = new SearchEngine(library.all(), precomputed, undefined, contextOf);
 
 let status: Status = 'loading';
 let snapshot: { status: Status; revision: number } = { status, revision: 0 };
@@ -75,6 +80,8 @@ export function startSemanticSearch() {
 const edited = new Set<string>();
 const editedSinceBuild = (c: Card) => edited.has(c.id);
 
+const currentVectors = (id: string) => engine.vectorsOf(id);
+
 async function reindex(card: Card) {
   const passages = cardPassages(card).map((p) => p.text);
   try {
@@ -90,11 +97,20 @@ async function reindex(card: Card) {
 let known = new Map(library.all().map((c) => [c.id, c]));
 library.subscribe(() => {
   const next = new Map(library.all().map((c) => [c.id, c]));
+  const nextPurposes = purposes();
+  const changedPurpose = new Set([...nextPurposes].filter(([n, p]) => purposeOf.get(n) !== p).map(([n]) => n));
+  purposeOf = nextPurposes;
   for (const [id, card] of next) {
-    if (known.get(id) === card) continue;
+    if (known.get(id) === card) {
+      // Only its collections' purpose changed: words to match, not meaning to re-embed.
+      if (card.collections?.some((n) => changedPurpose.has(n))) engine.upsert(card, currentVectors(id));
+      continue;
+    }
     edited.add(id);
-    const vecs = engine.vectorOf(id) ? { doc: engine.vectorOf(id)!, passages: [] } : undefined;
-    engine.upsert(card, vecs); // lexical now, keep the old meaning until the new one is ready
+    // Words now; keep the old overall meaning until new vectors arrive. Old passage vectors would no
+    // longer line up with the edited text, so they're dropped.
+    const old = currentVectors(id);
+    engine.upsert(card, old && { doc: old.doc, passages: [] });
     if (status === 'ready') void reindex(card);
   }
   for (const id of known.keys()) if (!next.has(id)) engine.remove(id);

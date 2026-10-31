@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { library, useCard, useLibrary } from '../data/store';
-import { navigate } from '../router';
+import { library, useCard, useCollections, useLibrary } from '../data/store';
+import { collectionHref, navigate } from '../router';
 import { engine, useSearchService } from '../search/searchService';
 import { createCanvas, placeOnCanvas, useCanvasList } from '../canvas/store';
 import { CardArt, CardThumb } from './CardArt';
@@ -87,6 +87,8 @@ export function CardDrawer({ id, onClose, onOpen, onMoreLike, onSameTime, onPlac
           {card.context && <p className="byline" style={{ marginTop: 8 }}>{card.context}</p>}
         </section>
 
+        <CollectionsOf cardId={card.id} names={card.collections ?? []} />
+
         <div className="actions">
           {card.source?.url && <a className="btn" href={card.source.url} target="_blank" rel="noreferrer">Open original ↗</a>}
           {onPlaceHere ? (
@@ -158,5 +160,55 @@ function PlaceOnCanvas({ itemId, canvases }: { itemId: string; canvases: { id: s
         + New canvas
       </button>
     </span>
+  );
+}
+
+/** Which contexts this card belongs to. One card, any number of collections — never copied. */
+function CollectionsOf({ cardId, names }: { cardId: string; names: string[] }) {
+  const all = useCollections();
+  const [adding, setAdding] = useState(false);
+  const [draft, setDraft] = useState('');
+  const others = all.filter((c) => !names.includes(c.name));
+
+  const addNew = () => {
+    const n = draft.trim();
+    if (!n) return;
+    const existing = all.find((c) => c.name.toLowerCase() === n.toLowerCase());
+    const name = existing?.name ?? library.createCollection(n);
+    if (name) library.setInCollection(cardId, name, true);
+    setDraft('');
+    setAdding(false);
+  };
+
+  return (
+    <section>
+      <div className="kicker">Collections</div>
+      <div className="collection-chips">
+        {names.map((n) => (
+          <span key={n} className="chip">
+            <a href={collectionHref(n)}>{n}</a>
+            <button aria-label={`Remove from ${n}`} title="Remove from this collection (the card stays in your library)" onClick={() => library.setInCollection(cardId, n, false)}>×</button>
+          </span>
+        ))}
+        {!adding && <button className="chip add-chip" onClick={() => setAdding(true)}>+ Add to collection</button>}
+      </div>
+      {adding && (
+        <div className="collection-picker">
+          {others.map((c) => (
+            <button key={c.name} className="btn" title={c.purpose} onClick={() => { library.setInCollection(cardId, c.name, true); setAdding(false); }}>
+              {c.name}
+            </button>
+          ))}
+          <input
+            autoFocus
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') addNew(); if (e.key === 'Escape') setAdding(false); e.stopPropagation(); }}
+            placeholder="or a new one…"
+            aria-label="New collection name"
+          />
+        </div>
+      )}
+    </section>
   );
 }
