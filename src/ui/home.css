@@ -55,7 +55,21 @@ body:has(.is-home) { background: #291f18; }
 .home-aside { font: 400 12px var(--h-code); color: rgba(254, 249, 230, 0.6); }
 .home-tabs a { color: var(--h-cream); text-decoration: none; opacity: 0.82; transition: opacity 150ms ease; }
 .home-tabs a:hover { opacity: 1; }
-.home-tabs a[aria-current='page'] { opacity: 1; text-decoration: underline; text-underline-offset: 6px; text-decoration-thickness: 1px; }
+.home-tabs a[aria-current='page'] { opacity: 1; }
+.home-tabs nav { position: relative; }
+/* a 1px-wide line scaled to the current tab's width, so moving it is a transform */
+.home-tab-line {
+  position: absolute; left: 0; bottom: -7px; width: 1px; height: 1px; background: var(--h-cream); transform-origin: 0 0;
+  transition: transform 520ms cubic-bezier(0.22, 1, 0.36, 1), opacity 200ms ease; pointer-events: none;
+}
+
+/* a new section eases in under the masthead, which stays still */
+.home-enter { flex: 1; display: flex; flex-direction: column; position: relative; animation: home-enter 560ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes home-enter { from { opacity: 0; top: 14px; } to { opacity: 1; top: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .home-tab-line { transition: none; }
+  .home-enter { animation: none; }
+}
 
 /* ── Page ─────────────────────────────────────────────────────────────────────────────────── */
 .is-home .today { flex: 1; width: 100%; max-width: var(--h-max); margin: 0 auto; padding: 22px var(--h-gutter) 96px; }
@@ -125,6 +139,12 @@ body:has(.is-home) { background: #291f18; }
 .pin-btn.is-solid { color: var(--h-navy); }
 .pin-btn.is-solid:not(.is-on)::before { content: '+ '; }
 .pin-btn.is-on { cursor: default; color: #6f7d4f; text-decoration: none; }
+.pin-btn.is-on { animation: kept-in 480ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes kept-in { from { opacity: 0; transform: translateY(3px); } }
+
+/* the small copy of a kept piece on its way to the Library tab (lives on <body>) */
+.kept-ghost { overflow: hidden; border-radius: 8px; background: #e4ded6; box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35); }
+.kept-ghost img { display: block; width: 100%; height: 100%; object-fit: cover; }
 
 /* book without a cover image, and songs */
 .pin-book {

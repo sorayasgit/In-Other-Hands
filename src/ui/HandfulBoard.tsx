@@ -2,6 +2,7 @@ import { memo, useEffect, useRef, useState, type ReactNode } from 'react';
 import { seedFrom } from '../data/shuffle';
 import { pieceImageSrc, type Piece } from '../handful/handful';
 import { Picture } from './Picture';
+import { boxOf, dip, flyInto } from './collections/motion';
 
 /**
  * Today's handful as a board of paper cards. Masonry via CSS grid: each pin spans as many 4px rows as its measured
@@ -75,6 +76,27 @@ export function HandfulBoard({ pieces, status, onOpen, onKeep }: Props) {
   );
 }
 
+/**
+ * Keeping copies a piece into your library, so a small copy of it flies up to the Library tab.
+ * `from` is what to copy: the picture if there is one, otherwise the card itself.
+ */
+export function flyToLibrary(from: Element | null) {
+  const tab = document.querySelector<HTMLElement>('.home-tabs a[href="#/library"]');
+  if (!from || !tab) return;
+  const media = from.matches('img, video') ? (from as HTMLImageElement | HTMLVideoElement) : from.querySelector<HTMLImageElement | HTMLVideoElement>('img, video');
+  const ghost = document.createElement('div');
+  ghost.className = 'kept-ghost';
+  if (media) {
+    const img = document.createElement('img');
+    img.src = media instanceof HTMLVideoElement ? media.poster || '' : media.currentSrc || media.src;
+    img.alt = '';
+    if (img.src) ghost.append(img);
+  }
+  void flyInto(ghost, boxOf(from), boxOf(tab)).then(() => {
+    tab.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-3px)' }, { transform: 'translateY(0)' }], { duration: 380, easing: 'ease-out' });
+  });
+}
+
 /** How many people held a piece before it reached you. */
 const HANDS_SHOWN = 4;
 export const handsLabel = (n: number) => `${n} ${n === 1 ? 'hand' : 'hands'} before yours`;
@@ -122,7 +144,17 @@ const Pin = memo(function Pin({ piece, index, status, onOpen, onKeep }: { piece:
         ) : status.kept ? (
           <span className="pin-btn is-solid is-on">Kept ✓</span>
         ) : (
-          <button className="pin-btn is-solid" onClick={() => onKeep(piece.id)}>Keep</button>
+          <button
+            className="pin-btn is-solid"
+            onClick={(e) => {
+              const pin = e.currentTarget.closest<HTMLElement>('.pin')!;
+              dip(pin);
+              flyToLibrary(pin.querySelector('.pin-visual') ?? pin);
+              onKeep(piece.id);
+            }}
+          >
+            Keep
+          </button>
         )}
       </div>
     </article>

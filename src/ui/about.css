@@ -12,10 +12,13 @@
 }
 .about-under { pointer-events: none; }
 .is-about.is-still { animation: none; box-shadow: none; pointer-events: none; }
+.is-about.is-leaving { pointer-events: none; animation: about-drop 900ms cubic-bezier(0.55, 0, 0.75, 0.25) both; }
+@keyframes about-drop { from { transform: translateY(0); } to { transform: translateY(100vh); } }
 body:has(.is-about) { overflow: hidden; }
 @keyframes about-pull { from { transform: translateY(100vh); } }
 @media (prefers-reduced-motion: reduce) {
   .is-about { animation: about-fade 200ms ease-out both; }
+  .is-about.is-leaving { animation: about-fade 200ms ease-in reverse both; }
   @keyframes about-fade { from { opacity: 0; } }
 }
 .is-about .home-title { margin-bottom: 0; }

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CanvasList } from './canvas/CanvasList';
 import { CanvasView } from './canvas/CanvasView';
 import { applyUrlFlags } from './handful/store';
@@ -15,12 +15,33 @@ export function App() {
   // The page an about page rises over; it stays drawn underneath while the about page is open.
   const lastPage = useRef<Route>({ path: '/today', params: new URLSearchParams() });
   // The about page that was open just before this one, if any: it stays drawn under the next one.
-  const seen = useRef<{ path: string; prevAbout?: AboutPage }>({ path: route.path });
+  const seen = useRef<{ path: string; prevAbout?: AboutPage; n: number }>({ path: route.path, n: 0 });
   if (seen.current.path !== route.path) {
     const was = seen.current.path.slice(1) as AboutPage;
-    seen.current = { path: route.path, prevAbout: ABOUT_PAGES.includes(was) ? was : undefined };
+    seen.current = { path: route.path, prevAbout: ABOUT_PAGES.includes(was) ? was : undefined, n: seen.current.n + 1 };
   }
+  // Leaving an about page, it slides back down over where you're going; `dropped` marks it gone.
+  const [dropped, setDropped] = useState(-1);
+  const sheetScroll = useRef(0);
+  const swipe = useRef<number>();
+  const closeAbout = () => navigate(lastPage.current.path, Object.fromEntries(lastPage.current.params));
   useEffect(startSemanticSearch, []);
+
+  const onAboutPage = (ABOUT_PAGES as readonly string[]).includes(route.path.slice(1));
+  // A sheet sliding away is cleared on a timer as well as on animationend, which a hidden tab may never send.
+  const dropping = !onAboutPage && !!seen.current.prevAbout && dropped !== seen.current.n;
+  useEffect(() => {
+    if (!dropping) return;
+    const n = seen.current.n;
+    const t = setTimeout(() => setDropped(n), matchMedia('(prefers-reduced-motion: reduce)').matches ? 250 : 950);
+    return () => clearTimeout(t);
+  }, [dropping, seen.current.n]);
+  useEffect(() => {
+    if (!onAboutPage) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && closeAbout();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onAboutPage]);
 
   // Recording helpers (?day=N, ?reset=1), accepted before or after the #. Applied once, then removed
   // from the address so a later navigation doesn't repeat them.
@@ -59,9 +80,37 @@ export function App() {
         </div>
       )}
       {onAbout && (
-        <div key={about} className={`shell is-home is-about about-${about}`}>
+        <div
+          key={about}
+          className={`shell is-home is-about about-${about}`}
+          onScroll={(e) => (sheetScroll.current = e.currentTarget.scrollTop)}
+          // Pull down from the top of the page to put it away.
+          onTouchStart={(e) => (swipe.current = e.currentTarget.scrollTop <= 0 ? e.touches[0].clientY : undefined)}
+          onTouchEnd={(e) => {
+            if (swipe.current !== undefined && e.changedTouches[0].clientY - swipe.current > 90) closeAbout();
+            swipe.current = undefined;
+          }}
+        >
           <HomeHeader title={about} about={about} />
           <AboutView page={about} />
+        </div>
+      )}
+      {dropping && (
+        <div
+          key={`leaving-${seen.current.n}`}
+          ref={(el) => {
+            if (el && !el.dataset.placed) {
+              el.dataset.placed = '1';
+              el.scrollTop = sheetScroll.current;
+            }
+          }}
+          className={`shell is-home is-about is-leaving about-${seen.current.prevAbout!}`}
+          aria-hidden
+          {...{ inert: '' }}
+          onAnimationEnd={(e) => e.target === e.currentTarget && setDropped(seen.current.n)}
+        >
+          <HomeHeader title={seen.current.prevAbout!} about={seen.current.prevAbout} />
+          <AboutView page={seen.current.prevAbout!} />
         </div>
       )}
     </>
@@ -85,7 +134,9 @@ function Page({ route }: { route: Route }) {
   return (
     <div className="shell is-home">
       <HomeHeader title={onToday ? 'In your hands' : onCollections ? 'Collections' : onCanvases ? 'Canvases' : 'Library'} tabs={tabs} />
-      {onToday ? <TodayView route={route} /> : onCollections ? <CollectionsSpace route={route} /> : onCanvases ? <CanvasList /> : <LibraryView route={route} />}
+      <div key={section} className="home-enter">
+        {onToday ? <TodayView route={route} /> : onCollections ? <CollectionsSpace route={route} /> : onCanvases ? <CanvasList /> : <LibraryView route={route} />}
+      </div>
     </div>
   );
 }

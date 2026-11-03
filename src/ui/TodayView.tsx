@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { TrailEntry } from '../data/types';
 import { agoLabel, newEntry, pieceImageSrc, type Piece } from '../handful/handful';
 import { reencodeImage } from '../handful/image';
 import { handful, today, useHandful } from '../handful/store';
 import { navigate, type Route } from '../router';
-import { HandfulBoard, handsLabel } from './HandfulBoard';
+import { flyToLibrary, HandfulBoard, handsLabel } from './HandfulBoard';
+import { boxOf, dip, fade, foldInto, liftAway, unfold } from './collections/motion';
 import { Picture } from './Picture';
 
 const KIND_LABEL: Record<Piece['kind'], string> = { book: 'Book', note: 'Note', quote: 'Quote', song: 'Song', recipe: 'Recipe', photo: 'Photo' };
@@ -38,7 +39,7 @@ export function TodayView({ route }: { route: Route }) {
         <p className="holding">
           <span className="kicker">Still holding</span>
           {elsewhere.map((id) => (
-            <button key={id} className="chip" style={{ cursor: 'pointer', paddingRight: 10 }} onClick={() => openPiece(id)}>
+            <button key={id} data-held={id} className="chip" style={{ cursor: 'pointer', paddingRight: 10 }} onClick={() => openPiece(id)}>
               {handful.piece(id)?.title ?? id}
             </button>
           ))}
@@ -69,28 +70,64 @@ function PiecePanel({ id, onClose, onReturned }: { id: string; onClose: () => vo
   const [adding, setAdding] = useState(false);
   // Asked inline rather than with confirm(), which some windows block outright.
   const [confirming, setConfirming] = useState(false);
+  const panel = useRef<HTMLElement>(null);
+  const scrim = useRef<HTMLDivElement>(null);
+  const leaving = useRef(false);
+
+  // The panel grows out of the pin (or the "Still holding" chip) it was opened from, and shrinks back into it.
+  const origin = () => document.querySelector(`[data-pin="${id}"] .pin`) ?? document.querySelector(`[data-held="${id}"]`);
+  useLayoutEffect(() => {
+    const from = origin();
+    const el = panel.current;
+    if (!el || !from) return;
+    el.style.animation = 'none';
+    const anim = unfold(el, boxOf(from), getComputedStyle(from).backgroundColor);
+    return () => anim.cancel();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  const close = () => {
+    const el = panel.current;
+    const to = origin();
+    if (leaving.current) return;
+    leaving.current = true;
+    if (scrim.current) void fade(scrim.current, false, 380);
+    if (!el) return onClose();
+    void foldInto(el, to ? boxOf(to) : undefined, to ? getComputedStyle(to).backgroundColor : '').then(onClose);
+  };
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && close();
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  });
 
   if (!piece) return null;
 
+  // Let go of it first, then send it: the panel drifts up and away before the piece leaves.
   const doReturn = () => {
-    handful.returnPiece(id);
-    setConfirming(false);
-    onReturned();
+    if (leaving.current) return;
+    leaving.current = true;
+    if (scrim.current) void fade(scrim.current, false, 600);
+    void (panel.current ? liftAway(panel.current) : Promise.resolve()).then(() => {
+      handful.returnPiece(id);
+      onClose();
+      onReturned();
+    });
+  };
+  const keep = () => {
+    if (panel.current) dip(panel.current);
+    flyToLibrary(panel.current?.querySelector('.piece-img') ?? panel.current?.querySelector('h1') ?? null);
+    handful.keep(id);
   };
 
   return (
     <>
-      <div className="scrim" onClick={onClose} />
-      <aside className="drawer piece-panel" role="dialog" aria-label={piece.title}>
+      <div ref={scrim} className="scrim" onClick={close} />
+      <aside ref={panel} className="drawer piece-panel" role="dialog" aria-label={piece.title}>
         <div className="drawer-top">
           <span className="kicker">{KIND_LABEL[piece.kind]} · {handsLabel(piece.hands)}</span>
-          <button className="btn quiet" onClick={onClose} aria-label="Close">✕</button>
+          <button className="btn quiet" onClick={close} aria-label="Close">✕</button>
         </div>
         <h1>{piece.title}</h1>
         {piece.image && <Picture className="piece-img" src={pieceImageSrc(piece.image)} alt={piece.body} />}
@@ -112,7 +149,7 @@ function PiecePanel({ id, onClose, onReturned }: { id: string; onClose: () => vo
               <button className="btn primary" onClick={() => setConfirming(true)}>Return</button>
             </>
           ) : (
-            <button className="btn primary" onClick={() => handful.keep(id)}>Keep</button>
+            <button className="btn primary" onClick={keep}>Keep</button>
           )}
         </div>
 

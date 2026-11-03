@@ -125,3 +125,115 @@ export function settle(el: HTMLElement, from: Box, rotate: number): Animation {
     { duration: ZOOM_MS, easing: EASE },
   );
 }
+
+// ── Today: a kept piece flies to the Library tab; a returned piece lifts away ──────────────────
+
+/**
+ * A small copy of what was kept (`ghost`, positioned for you) travels from `from` into `to` and
+ * fades as it lands. Resolves when it has gone.
+ */
+export function flyInto(ghost: HTMLElement, from: Box, to: Box): Promise<void> {
+  if (reducedMotion()) return Promise.resolve();
+  Object.assign(ghost.style, {
+    position: 'fixed', left: `${from.left}px`, top: `${from.top}px`, width: `${from.width}px`, height: `${from.height}px`,
+    zIndex: '70', pointerEvents: 'none', transformOrigin: '0 0', margin: '0',
+  });
+  document.body.append(ghost);
+  const s = Math.min(to.width / from.width, to.height / from.height, 0.25);
+  const dx = to.left + to.width / 2 - (from.left + (from.width * s) / 2);
+  const dy = to.top + to.height / 2 - (from.top + (from.height * s) / 2);
+  const anim = ghost.animate(
+    [
+      { transform: 'translate(0, 0) scale(1)', opacity: 1, offset: 0 },
+      { transform: `translate(${dx * 0.35}px, ${dy * 0.35 - 40}px) scale(${0.55 + s * 0.45}) rotate(-4deg)`, opacity: 1, offset: 0.4 },
+      { transform: `translate(${dx}px, ${dy}px) scale(${s}) rotate(0deg)`, opacity: 0 },
+    ],
+    { duration: 820, easing: 'cubic-bezier(0.45, 0, 0.25, 1)', fill: 'forwards' },
+  );
+  return anim.finished.then(() => ghost.remove(), () => ghost.remove());
+}
+
+/** A small press: the card dips and comes back, as if set down. */
+export function dip(el: HTMLElement): void {
+  if (reducedMotion()) return;
+  el.animate(
+    [{ transform: 'translateY(0) scale(1)' }, { transform: 'translateY(3px) scale(0.985)' }, { transform: 'translateY(0) scale(1)' }],
+    { duration: 420, easing: EASE },
+  );
+}
+
+/** Let go: drift up and away, then resolve. */
+export function liftAway(el: HTMLElement): Promise<void> {
+  const anim = reducedMotion()
+    ? el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, easing: 'ease-in', fill: 'forwards' })
+    : el.animate(
+        [
+          { transform: 'translateY(0) rotate(0deg)', opacity: 1 },
+          { transform: 'translateY(-14px) rotate(0deg)', opacity: 1, offset: 0.25 },
+          { transform: 'translateY(-90px) rotate(-1.5deg)', opacity: 0 },
+        ],
+        { duration: 760, easing: 'cubic-bezier(0.4, 0, 0.3, 1)', fill: 'forwards' },
+      );
+  return anim.finished.then(() => undefined, () => undefined);
+}
+
+/**
+ * Open a panel out of a card without repainting it frame by frame: a plain sheet (two flat layers,
+ * the card's colour fading into the panel's) grows from the card to the panel using only transform
+ * and opacity, and the panel itself fades in over the last part of that growth.
+ */
+export function unfold(el: HTMLElement, from: Box, fromColor: string): { cancel: () => void } {
+  if (reducedMotion()) return el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, easing: 'ease-out' });
+  const to = boxOf(el);
+  const sheet = makeSheet(to, getComputedStyle(el).backgroundColor, fromColor);
+  const grow = 560;
+  sheet.animate([{ transform: invert(from, to) }, { transform: 'none' }], { duration: grow, easing: EASE, fill: 'both' });
+  sheet.firstElementChild!.animate([{ opacity: 1 }, { opacity: 0 }], { duration: grow * 0.7, easing: 'ease-out', fill: 'both' });
+  // The panel's own ground takes over from the sheet as it lands (same colour, so no seam)…
+  const show = el.animate([{ opacity: 0 }, { opacity: 0, offset: 0.75 }, { opacity: 1 }], { duration: grow, easing: 'linear' });
+  show.finished.then(() => sheet.remove(), () => sheet.remove());
+  // …then what's on it fades in slowly, one piece after another, rather than appearing at once.
+  const parts = [...el.children].map((child, i) =>
+    child.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'translateY(0)' }], {
+      duration: 760, delay: grow * 0.7 + Math.min(i, 6) * 70, easing: 'cubic-bezier(0.25, 0.1, 0.25, 1)', fill: 'backwards',
+    }),
+  );
+  return {
+    cancel: () => {
+      show.cancel();
+      parts.forEach((a) => a.cancel());
+      sheet.remove();
+    },
+  };
+}
+
+/** The reverse of `unfold`: the panel fades, and the sheet shrinks back into the card. */
+export function foldInto(el: HTMLElement, to: Box | undefined, toColor: string): Promise<void> {
+  if (!to || reducedMotion()) return fade(el, false, 200);
+  const from = boxOf(el);
+  const sheet = makeSheet(from, getComputedStyle(el).backgroundColor, toColor);
+  (sheet.firstElementChild as HTMLElement).style.opacity = '0';
+  el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, easing: 'ease-in', fill: 'forwards' });
+  sheet.firstElementChild!.animate([{ opacity: 0 }, { opacity: 0, offset: 0.3 }, { opacity: 1 }], { duration: 460, easing: 'ease-in', fill: 'forwards' });
+  return sheet
+    .animate(
+      [{ transform: 'none', opacity: 1 }, { transform: invert(to, from), opacity: 1, offset: 0.85 }, { transform: invert(to, from), opacity: 0 }],
+      { duration: 520, easing: 'cubic-bezier(0.45, 0, 0.2, 1)', fill: 'forwards' },
+    )
+    .finished.then(() => sheet.remove(), () => sheet.remove());
+}
+
+/** A flat stand-in at `box`: the panel's colour, with the card's colour on top to fade between them. */
+function makeSheet(box: Box, color: string, overColor: string): HTMLElement {
+  const sheet = document.createElement('div');
+  Object.assign(sheet.style, {
+    position: 'fixed', left: `${box.left}px`, top: `${box.top}px`, width: `${box.width}px`, height: `${box.height}px`,
+    background: color, transformOrigin: '0 0', zIndex: '40', pointerEvents: 'none', willChange: 'transform', // over the scrim, under the panel
+    boxShadow: '0 18px 50px rgba(0, 0, 0, 0.28)',
+  });
+  const over = document.createElement('div');
+  Object.assign(over.style, { position: 'absolute', inset: '0', background: overColor, willChange: 'opacity' });
+  sheet.append(over);
+  document.body.append(sheet);
+  return sheet;
+}
