@@ -100,6 +100,38 @@ body:has(.is-home) { background: #291f18; }
 }
 .pin:hover, .pin:focus-within { transform: translateY(-2px); box-shadow: 0 12px 26px rgba(0, 0, 0, 0.32); }
 
+/* Under the pointer the card leans toward it (lamp.ts); still the rest of the time. The Library's
+   tiles do the same, leaning half as far. */
+:is(.pin, .is-home .tile).is-tilted {
+  transform: perspective(800px) translateY(-2px) rotateX(var(--rx)) rotateY(var(--ry));
+  transition: transform 90ms ease-out, box-shadow 200ms ease;
+}
+:is(.pin, .is-home .tile) { transition: transform 450ms ease, box-shadow 220ms ease; }
+/* the first lean is slow (lamp.ts takes this off once it's done), and the light comes up with it */
+:is(.pin, .is-home .tile).is-tilted.is-easing { transition: transform 520ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 400ms ease; }
+/* the rise-in lets go of the tile once it's done; held, it would override the lean's easing */
+.is-home .tile { position: relative; animation-fill-mode: backwards; }
+/* The light: white, no colour, brightest under the pointer. It shows up the card's grain (a mottled
+   cloud and a fine tooth, like printed card stock) rather than lying on it as a smooth blur. */
+:is(.pin, .is-home .tile)::before, :is(.pin, .is-home .tile)::after {
+  content: ''; position: absolute; inset: 0; z-index: 3; border-radius: inherit; pointer-events: none;
+  opacity: 0; transition: opacity 350ms ease;
+}
+:is(.pin, .is-home .tile)::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.03' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='linear' slope='2.4' intercept='-0.7'/%3E%3CfeFuncG type='linear' slope='2.4' intercept='-0.7'/%3E%3CfeFuncB type='linear' slope='2.4' intercept='-0.7'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='linear' slope='2.4' intercept='-0.7'/%3E%3CfeFuncG type='linear' slope='2.4' intercept='-0.7'/%3E%3CfeFuncB type='linear' slope='2.4' intercept='-0.7'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 320px 320px, 160px 160px; background-blend-mode: overlay;
+  mix-blend-mode: overlay;
+  -webkit-mask-image: radial-gradient(240px circle at var(--lx, 50%) var(--ly, 50%), #000, rgba(0, 0, 0, 0.35) 45%, transparent 75%);
+  mask-image: radial-gradient(240px circle at var(--lx, 50%) var(--ly, 50%), #000, rgba(0, 0, 0, 0.35) 45%, transparent 75%);
+}
+:is(.pin, .is-home .tile)::after {
+  background: radial-gradient(280px circle at var(--lx, 50%) var(--ly, 50%), rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.12) 40%, transparent 72%);
+  mix-blend-mode: overlay;
+}
+:is(.pin, .is-home .tile).is-tilted::before { opacity: 0.75; transition: opacity 450ms ease; }
+:is(.pin, .is-home .tile).is-tilted::after { opacity: 1; transition: opacity 450ms ease; }
+@media (prefers-reduced-motion: reduce) { :is(.pin, .is-home .tile).is-tilted { transform: translateY(-2px); } }
+
 .pin-num { font: 500 11px/1 var(--h-sans); color: #6b6762; margin-bottom: 10px; }
 
 /* pictures sit close to the card's edge, the way a print sits in a sleeve */
@@ -213,7 +245,8 @@ body:has(.is-home) { background: #291f18; }
 /* browse: the board's paper cards, packed close */
 .is-home .grid { max-width: none; column-gap: 16px; }
 .is-home .tile { margin-bottom: 16px; background: var(--h-card); color: var(--h-ink); border-radius: 8px; overflow: hidden; box-shadow: none; }
-.is-home .tile:hover { transform: translateY(-2px); box-shadow: 0 12px 26px rgba(0, 0, 0, 0.32); }
+.is-home .tile:hover:not(.is-tilted) { transform: translateY(-2px); box-shadow: 0 12px 26px rgba(0, 0, 0, 0.32); }
+.is-home .tile.is-tilted { box-shadow: 0 12px 26px rgba(0, 0, 0, 0.32); }
 .is-home .tile .body { padding: 10px 14px 13px; }
 .is-home .tile .kicker { font: 400 10px var(--h-code); letter-spacing: 0; text-transform: none; color: #6b6762; }
 .is-home .tile h3 { margin: 4px 0 4px; font: 400 16px/1.2 var(--h-display); color: var(--h-ink); }

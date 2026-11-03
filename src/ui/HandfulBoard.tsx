@@ -3,6 +3,7 @@ import { seedFrom } from '../data/shuffle';
 import { pieceImageSrc, type Piece } from '../handful/handful';
 import { Picture } from './Picture';
 import { boxOf, dip, flyInto } from './collections/motion';
+import { lamp } from './lamp';
 
 /**
  * Today's handful as a board of paper cards. Masonry via CSS grid: each pin spans as many 4px rows as its measured
@@ -118,7 +119,7 @@ const Pin = memo(function Pin({ piece, index, status, onOpen, onKeep }: { piece:
   const hands = piece.hands >= HANDS_SHOWN && <span className="pin-hands">{handsLabel(piece.hands)}</span>;
 
   return (
-    <article className={`pin k-${piece.kind} ${visual ? 'has-visual' : 'is-text'} ${status.kept ? 'is-kept' : ''}`}>
+    <article className={`pin k-${piece.kind} ${visual ? 'has-visual' : 'is-text'} ${status.kept ? 'is-kept' : ''}`} {...lamp()}>
       <span className="pin-num">[{String(index + 1).padStart(2, '0')}.]</span>
       {!visual && hands}
       {visual && (

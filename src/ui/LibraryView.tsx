@@ -11,6 +11,7 @@ import { Picture } from './Picture';
 import { CardDrawer } from './CardDrawer';
 import { byline, gist, savedLabel } from './format';
 import { Highlight } from './Highlight';
+import { lamp } from './lamp';
 import { PunchStudio } from './PunchStudio';
 
 const EXAMPLES = ['the image with warm, earthy colours', 'a quote about how we learn', 'something I saved over the summer about technology', 'that idea about collecting without a reason'];
@@ -221,7 +222,7 @@ export function LibraryView({ route }: { route: Route }) {
       {!searching && (
         <div className="grid">
           {browse.map((c, i) => (
-            <button key={c.id} className="tile" style={{ animationDelay: `${Math.min(i, 12) * 20}ms` }} onClick={() => set({ open: c.id })}>
+            <button key={c.id} className="tile" style={{ animationDelay: `${Math.min(i, 12) * 20}ms` }} onClick={() => set({ open: c.id })} {...lamp(0.5)}>
               {c.type === 'image' && !c.cover && <div style={{ aspectRatio: '4 / 3' }}><CardArt card={c} /></div>}
               {c.type === 'image' && c.cover && <Picture className="tile-picture" src={c.cover} alt="" lazy />}
               {c.type !== 'image' && c.cover && <div className="tile-cover"><Picture src={c.cover} alt="" lazy /></div>}
