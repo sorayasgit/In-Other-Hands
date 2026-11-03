@@ -1,0 +1,51 @@
+/* Purpose, Experience and Newsroom: the home page's masthead and type on a ground of their own. */
+
+.is-about.about-purpose { --h-bg: #c1c1a9; --h-cream: #241c16; --h-rule: rgba(36, 28, 22, 0.4); color-scheme: light; }
+.is-about.about-experience { --h-bg: #795058; --h-rule: rgba(254, 249, 230, 0.5); }
+.is-about.about-newsroom { --h-bg: #282d4b; --h-rule: rgba(254, 249, 230, 0.45); }
+
+/* each page rises all the way from the bottom, slowly, settling softly at the top */
+/* The page it rose over stays put underneath (App draws it in .about-under); the sheet scrolls on its own. */
+.is-about {
+  position: fixed; inset: 0; z-index: 40; overflow-y: auto; overscroll-behavior: contain;
+  animation: about-pull 1400ms cubic-bezier(0.25, 0.8, 0.25, 1) both; box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.18);
+}
+.about-under { pointer-events: none; }
+.is-about.is-still { animation: none; box-shadow: none; pointer-events: none; }
+body:has(.is-about) { overflow: hidden; }
+@keyframes about-pull { from { transform: translateY(100vh); } }
+@media (prefers-reduced-motion: reduce) {
+  .is-about { animation: about-fade 200ms ease-out both; }
+  @keyframes about-fade { from { opacity: 0; } }
+}
+.is-about .home-title { margin-bottom: 0; }
+
+/* the wordmark is cream on brown; the light page uses an ink copy with a clear ground */
+.about-purpose .home-logo img { content: url('/brand/wordmark-ink.png'); mix-blend-mode: normal; }
+.about-purpose .home-arrow { background: #241c16; color: #c1c1a9; }
+
+.home-links a { color: inherit; text-decoration: none; white-space: nowrap; text-underline-offset: 4px; text-decoration-thickness: 1px; }
+.home-links a:hover, .home-links a[aria-current='page'] { text-decoration: underline; }
+
+.about { flex: 1; width: 100%; max-width: var(--h-max); margin: 0 auto; padding: 56px var(--h-gutter) 120px; color: var(--h-cream); }
+.about-prose { max-width: 640px; }
+.about-prose p { margin: 0 0 22px; font: 400 19px/1.6 var(--h-garamond); opacity: 0.86; }
+.about-prose .about-lead { font-size: 23px; line-height: 1.5; opacity: 1; }
+.about-prose section { margin-bottom: 44px; }
+.about-kicker { display: block; margin-bottom: 12px; font: 400 11px/1.4 var(--h-code); letter-spacing: 0.04em; text-transform: uppercase; opacity: 0.65; }
+.about-next {
+  display: inline-block; margin-top: 18px; color: inherit; font: 400 13px var(--h-code); letter-spacing: 0.02em;
+  text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px;
+}
+
+.about-news { list-style: none; margin: 0; padding: 0; }
+.about-news li { padding: 26px 0 8px; border-top: 1px solid var(--h-rule); }
+.about-news li:first-child { padding-top: 0; border-top: 0; }
+.about-news h2 { margin: 0 0 10px; font: 400 24px/1.2 var(--h-display); }
+.about-news p { font-size: 17px; }
+.about-news .is-coming p { font-style: italic; }
+
+@media (max-width: 560px) {
+  .about { padding-top: 36px; }
+  .about-prose .about-lead { font-size: 20px; }
+}

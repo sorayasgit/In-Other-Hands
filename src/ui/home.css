@@ -69,7 +69,7 @@ body:has(.is-home) { background: #291f18; }
 /* ── Board: masonry (spans set in HandfulBoard; the gap there must match column-gap) ────── */
 .board {
   list-style: none; margin: 0; padding: 0;
-  display: grid; grid-template-columns: repeat(1, minmax(0, 1fr)); column-gap: 28px;
+  display: grid; grid-template-columns: repeat(1, minmax(0, 1fr)); column-gap: 16px;
   grid-auto-rows: 4px; grid-auto-flow: dense; align-items: start;
 }
 @media (min-width: 560px) { .board { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -80,53 +80,58 @@ body:has(.is-home) { background: #291f18; }
 @keyframes home-rise { from { opacity: 0; transform: translateY(12px); } }
 
 .pin {
-  position: relative; display: flex; flex-direction: column; padding: 22px 28px 26px;
+  position: relative; display: flex; flex-direction: column; padding: 14px 14px 12px; border-radius: 8px;
   background: var(--h-card); color: var(--h-ink);
   transition: transform 180ms ease, box-shadow 180ms ease;
 }
-.pin:hover, .pin:focus-within { transform: translateY(-3px); box-shadow: 0 16px 34px rgba(0, 0, 0, 0.35); }
+.pin:hover, .pin:focus-within { transform: translateY(-2px); box-shadow: 0 12px 26px rgba(0, 0, 0, 0.32); }
 
-.pin-num { font: 500 17px/1 var(--h-sans); color: #111; margin-bottom: 20px; }
+.pin-num { font: 500 11px/1 var(--h-sans); color: #6b6762; margin-bottom: 10px; }
 
-.pin-visual { position: relative; display: block; width: 100%; margin: 0 0 22px; padding: 0; border: 0; background: none; cursor: zoom-in; line-height: 0; }
+/* pictures sit close to the card's edge, the way a print sits in a sleeve */
+.pin-visual {
+  position: relative; display: block; width: calc(100% + 12px); margin: 0 -6px 12px; padding: 0; border: 0; background: none;
+  cursor: zoom-in; line-height: 0; border-radius: 5px; overflow: hidden;
+}
 .pin-visual:focus-visible { outline: 2px solid var(--h-navy); outline-offset: 3px; }
 .pin-img { display: block; width: 100%; height: auto; }
 .pin-hands {
-  position: absolute; top: 12px; right: 10px; padding: 5px 14px 6px; border-radius: 10px;
-  background: var(--h-sage); color: var(--h-ink); font: 400 15px/1.2 var(--h-garamond); white-space: nowrap;
+  position: absolute; top: 8px; right: 8px; padding: 3px 9px 4px; border-radius: 8px;
+  background: var(--h-sage); color: var(--h-ink); font: 400 12px/1.2 var(--h-garamond); white-space: nowrap;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
-.is-text > .pin-hands { top: 16px; right: 20px; box-shadow: none; }
+.is-text > .pin-hands { top: 10px; right: 12px; box-shadow: none; }
 
-.pin-title { margin: 0; font: 400 24px/1.12 var(--h-display); letter-spacing: -0.005em; color: var(--h-ink); }
-.is-text .pin-title { font-size: 26px; text-align: justify; text-align-last: left; hyphens: manual; }
-.pin-by { margin: 8px 0 0; font: 400 15px/1.3 var(--h-code); color: #57504a; }
-.pin-meta { display: flex; flex-wrap: wrap; gap: 0; margin: 12px 0 0; font: 400 15px/1.4 var(--h-garamond); color: var(--h-ink); }
-.pin-meta span + span::before { content: '|'; margin: 0 16px; }
+.pin-title { margin: 0; font: 400 17px/1.18 var(--h-display); letter-spacing: -0.005em; color: var(--h-ink); }
+.is-text .pin-title { font-size: 19px; }
+.pin-by { margin: 4px 0 0; font: 400 11px/1.3 var(--h-code); color: #57504a; }
+.pin-meta { display: flex; flex-wrap: wrap; gap: 0; margin: 6px 0 0; font: 400 12px/1.4 var(--h-garamond); color: #6b6762; }
+.pin-meta span + span::before { content: '·'; margin: 0 7px; }
 .pin-excerpt {
-  margin: 18px 0 0; font: 400 15px/1.45 var(--h-garamond); color: var(--h-ink-2);
-  display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
+  margin: 8px 0 0; font: 400 13px/1.45 var(--h-garamond); color: var(--h-ink-2);
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
 }
-.is-text .pin-excerpt { margin-top: 16px; -webkit-line-clamp: 5; }
+.is-text .pin-excerpt { -webkit-line-clamp: 4; }
 .k-quote .pin-excerpt { font-style: italic; }
 
-.pin-actions { display: flex; gap: 8px; margin-top: 20px; }
+/* actions read as a quiet line of links, not buttons */
+.pin-actions { display: flex; align-items: center; gap: 14px; margin-top: 10px; }
 .pin-btn {
-  display: inline-grid; place-items: center; min-height: 26px; padding: 3px 12px; border-radius: 5px; cursor: pointer;
-  font: 400 11px/1 var(--h-code); letter-spacing: 0.02em; color: var(--h-navy); background: transparent; border: 1px solid var(--h-navy); white-space: nowrap;
-  transition: background 150ms ease, color 150ms ease;
+  padding: 2px 0; border: 0; background: none; cursor: pointer;
+  font: 400 10.5px/1.2 var(--h-code); letter-spacing: 0.02em; color: #6b6762; white-space: nowrap;
+  text-decoration: underline transparent; text-underline-offset: 3px; transition: color 150ms ease, text-decoration-color 150ms ease;
 }
-.pin-btn:hover { background: rgba(39, 43, 77, 0.08); }
-.pin-btn.is-solid { background: var(--h-navy); color: var(--h-cream); }
-.pin-btn.is-solid:hover { background: #343a66; }
-.pin-btn.is-on { cursor: default; background: transparent; color: var(--h-navy); border-style: dashed; }
+.pin-btn:hover { color: var(--h-navy); text-decoration-color: currentColor; }
+.pin-btn.is-solid { color: var(--h-navy); }
+.pin-btn.is-solid:not(.is-on)::before { content: '+ '; }
+.pin-btn.is-on { cursor: default; color: #6f7d4f; text-decoration: none; }
 
 /* book without a cover image, and songs */
 .pin-book {
-  display: flex; align-items: flex-end; width: 100%; padding: 26px 22px; background: #8f2a1d; color: #fef9e6;
+  display: flex; align-items: flex-end; width: 100%; padding: 18px 16px; background: #8f2a1d; color: #fef9e6;
   box-shadow: inset 8px 0 0 rgba(0, 0, 0, 0.12);
 }
-.pin-book-title { font: 400 20px/1.2 var(--h-garamond); text-align: left; }
+.pin-book-title { font: 400 16px/1.2 var(--h-garamond); text-align: left; }
 .pin-vinyl-stage { display: grid; place-items: center; width: 100%; background: #2f2620; }
 .pin-vinyl { width: 76%; height: auto; animation: home-spin 9s linear infinite; animation-play-state: paused; }
 .k-song:hover .pin-vinyl, .k-song:focus-within .pin-vinyl { animation-play-state: running; }
@@ -151,7 +156,7 @@ body:has(.is-home) { background: #291f18; }
   .home-bar { padding: 22px 0 18px; }
   .home-links { display: none; }
   .home-tabs { font-size: 18px; gap: 6px 20px; }
-  .pin { padding: 18px 20px 22px; }
+  .pin { padding: 12px 12px 10px; }
 }
 
 /* The piece panel keeps the app's light paper look; don't let the page's cream text leak into it. */
@@ -185,20 +190,19 @@ body:has(.is-home) { background: #291f18; }
 .is-home .result .why { font: 400 12px var(--h-code); color: var(--h-sage); }
 .is-home mark { background: rgba(197, 201, 176, 0.45); color: inherit; }
 
-/* browse: the board's paper cards */
-.is-home .grid { max-width: none; column-gap: 28px; }
-.is-home .tile { margin-bottom: 28px; background: var(--h-card); color: var(--h-ink); border-radius: 0; box-shadow: none; }
-.is-home .tile:hover { transform: translateY(-3px); box-shadow: 0 16px 34px rgba(0, 0, 0, 0.35); }
-.is-home .tile .body { padding: 18px 22px 22px; }
-.is-home .tile .kicker { font: 400 12px var(--h-code); letter-spacing: 0; text-transform: none; color: #57504a; }
-.is-home .tile h3 { margin: 8px 0 8px; font: 400 23px/1.12 var(--h-display); color: var(--h-ink); }
-.is-home .tile p { font: 15px/1.45 var(--h-garamond); color: var(--h-ink-2); }
-.is-home .tile .quote-text { font-size: 18px; color: var(--h-ink); }
-.is-home .tile-picture { padding: 22px 22px 0; }
-.is-home .tile-cover { padding: 22px 22px 0; background: none; justify-content: flex-start; }
-.is-home .tile-cover :is(img, video) { width: 70%; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2); }
-.is-home .tile > div[style*='aspect-ratio'] { margin: 22px 22px 0; }
-
+/* browse: the board's paper cards, packed close */
+.is-home .grid { max-width: none; column-gap: 16px; }
+.is-home .tile { margin-bottom: 16px; background: var(--h-card); color: var(--h-ink); border-radius: 8px; overflow: hidden; box-shadow: none; }
+.is-home .tile:hover { transform: translateY(-2px); box-shadow: 0 12px 26px rgba(0, 0, 0, 0.32); }
+.is-home .tile .body { padding: 10px 14px 13px; }
+.is-home .tile .kicker { font: 400 10px var(--h-code); letter-spacing: 0; text-transform: none; color: #6b6762; }
+.is-home .tile h3 { margin: 4px 0 4px; font: 400 16px/1.2 var(--h-display); color: var(--h-ink); }
+.is-home .tile p { font: 13px/1.45 var(--h-garamond); color: var(--h-ink-2); -webkit-line-clamp: 3; }
+.is-home .tile .quote-text { font-size: 15px; color: var(--h-ink); }
+.is-home .tile-picture { width: calc(100% - 12px); margin: 6px 6px 0; border-radius: 5px; }
+.is-home .tile-cover { padding: 14px 14px 0; background: none; justify-content: flex-start; }
+.is-home .tile-cover :is(img, video) { width: 62%; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); }
+.is-home .tile > div[style*='aspect-ratio'] { margin: 6px 6px 0; border-radius: 5px; overflow: hidden; }
 
 /* ── Canvases list, in the same dress (the fanned previews themselves are untouched) ─────────── */
 .is-home .canvases { max-width: var(--h-max); padding: 22px var(--h-gutter) 96px; }

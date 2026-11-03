@@ -11,7 +11,7 @@ import { Picture } from './Picture';
  */
 
 const ROW = 4;
-const GAP = 28;
+const GAP = 16;
 
 /** Cover proportions for books without a cover image, chosen per piece. */
 const PORTRAIT = ['3 / 4', '4 / 5', '2 / 3'] as const;
@@ -106,7 +106,7 @@ const Pin = memo(function Pin({ piece, index, status, onOpen, onKeep }: { piece:
         </button>
       )}
       <h3 className="pin-title">{piece.title}</h3>
-      <p className="pin-by">by {by}</p>
+      {by !== 'Anonymous' && <p className="pin-by">by {by}</p>}
       {!visual && meta.length > 0 && (
         <p className="pin-meta">
           {meta.map((m, i) => (

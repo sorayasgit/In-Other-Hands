@@ -2,10 +2,13 @@ import type { ReactNode } from 'react';
 import './home.css';
 
 /**
- * The masthead shared by Today, Library and Collections. The about links (Purpose … Request Demo)
- * are drawn as in the design but lead nowhere yet: there are no such pages, and no accounts.
+ * The masthead shared by every page but an open canvas. Purpose, Experience and Newsroom lead to
+ * their pages; Login and Request Demo are drawn as in the design but lead nowhere (there are no accounts).
  */
-export function HomeHeader({ title, tabs, aside }: { title: string; tabs: ReactNode; aside?: ReactNode }) {
+export function HomeHeader({ title, tabs, aside, about }: { title: string; tabs?: ReactNode; aside?: ReactNode; about?: string }) {
+  const link = (page: string, label: string) => (
+    <a href={`#/${page}`} aria-current={about === page ? 'page' : undefined}>{label}</a>
+  );
   return (
     <header className="home-head">
       <div className="home-bar">
@@ -13,9 +16,9 @@ export function HomeHeader({ title, tabs, aside }: { title: string; tabs: ReactN
           <img src="/brand/wordmark.png" alt="In Other Hands" width={1394} height={366} />
         </a>
         <nav className="home-links" aria-label="About">
-          <span>Purpose</span>
-          <span>Experience</span>
-          <span>Newsroom</span>
+          {link('purpose', 'Purpose')}
+          {link('experience', 'Experience')}
+          {link('newsroom', 'Newsroom')}
           <span className="home-links-gap" />
           <span>Login</span>
           <span className="is-underlined">Request Demo</span>
@@ -25,10 +28,12 @@ export function HomeHeader({ title, tabs, aside }: { title: string; tabs: ReactN
         </nav>
       </div>
       <h1 className="home-title">{title}</h1>
-      <div className="home-tabs">
-        <nav aria-label="Sections">{tabs}</nav>
-        {aside && <span className="home-aside">{aside}</span>}
-      </div>
+      {(tabs || aside) && (
+        <div className="home-tabs">
+          <nav aria-label="Sections">{tabs}</nav>
+          {aside && <span className="home-aside">{aside}</span>}
+        </div>
+      )}
     </header>
   );
 }
