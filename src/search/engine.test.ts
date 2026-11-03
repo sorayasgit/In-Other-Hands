@@ -57,7 +57,7 @@ describe('find the thing, however you remember it', () => {
   });
 
   it('finds an image by text inside it', async () => {
-    const { pos } = await rank('poster that said painted desert', 'c10');
+    const { pos } = await rank('the perfume label that said high lonesome', 'c10');
     expect(pos).toBe(0);
   });
 

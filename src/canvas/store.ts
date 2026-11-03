@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { addCard, addEdge, addFrame, addNote, CARD_W, emptyCanvas, removeItems, type Camera, type CanvasDoc } from './model';
-import { buildFoldSpace, FOLD_SPACE_ID } from './seedFoldSpace';
+import { buildFoldSpace, FOLD_LAYOUT, FOLD_SPACE_ID, regrowFoldSpace } from './seedFoldSpace';
 
 /**
  * Canvas persistence in localStorage: an index of canvases plus one key per document and one per
@@ -55,7 +55,15 @@ function summarize(doc: CanvasDoc): CanvasSummary {
 export function loadCanvas(id: string): CanvasDoc | undefined {
   try {
     const raw = localStorage.getItem(docKey(id));
-    return raw ? JSON.parse(raw) : undefined;
+    const doc: CanvasDoc | undefined = raw ? JSON.parse(raw) : undefined;
+    // The Fold space sample saved at its original, smaller layout grows once (camera reset to fit).
+    if (doc?.id === FOLD_SPACE_ID && (doc.layoutVersion ?? 1) < FOLD_LAYOUT) {
+      const grown = regrowFoldSpace(doc);
+      localStorage.setItem(docKey(id), JSON.stringify(grown));
+      localStorage.removeItem(camKey(id));
+      return grown;
+    }
+    return doc;
   } catch {
     return undefined;
   }
@@ -188,7 +196,7 @@ function seed(): CanvasSummary[] {
   doc = d1;
   doc = addEdge(doc, ids.kiln, ids.brief, 'the light');
   doc = addEdge(doc, ids.brief, note);
-  doc = addEdge(doc, ids.poster, ids.brief, 'flat shapes, same heat');
+  doc = addEdge(doc, ids.poster, ids.brief, 'desert notes, same heat');
   const [d2] = addFrame(
     doc,
     [

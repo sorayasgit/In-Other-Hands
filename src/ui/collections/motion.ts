@@ -61,6 +61,14 @@ export function zoomOut(el: HTMLElement, to: Box | undefined, extra: Keyframe[] 
   return anim.finished.then(() => undefined, () => undefined);
 }
 
+/** Slide `el` down off the bottom of the screen, then resolve. */
+export function slideAway(el: HTMLElement): Promise<void> {
+  const anim = reducedMotion()
+    ? el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, easing: 'ease-in', fill: 'forwards' })
+    : el.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(100%)' }], { duration: 560, easing: 'cubic-bezier(0.6, 0, 0.3, 1)', fill: 'forwards' });
+  return anim.finished.then(() => undefined, () => undefined);
+}
+
 export function fade(el: HTMLElement, show: boolean, ms = FADE_MS): Promise<void> {
   return el
     .animate([{ opacity: show ? 0 : 1 }, { opacity: show ? 1 : 0 }], { duration: ms, easing: 'ease-out', fill: 'forwards' })
@@ -73,28 +81,31 @@ export const SPRING = 'cubic-bezier(0.22, 1.2, 0.36, 1)';
 
 const centre = (b: Box) => [b.left + b.width / 2, b.top + b.height / 2];
 
-/** Fly out from (dx, dy) — the folder's centre relative to the card's own — to rest at `rotate` degrees. */
-export function burst(el: HTMLElement, dx: number, dy: number, rotate: number, delay: number): Animation {
+/**
+ * Slide out from behind the folder: from (dx, dy) — the folder's centre relative to the card's own —
+ * at `fit` scale (small enough to hide behind it) to rest at `rotate` degrees.
+ */
+export function burst(el: HTMLElement, dx: number, dy: number, rotate: number, delay: number, fit = 0.6): Animation {
   if (reducedMotion()) return el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, delay, easing: 'ease-out', fill: 'backwards' });
   return el.animate(
     [
-      { transform: `translate(${dx}px, ${dy}px) scale(0.6) rotate(0deg)`, opacity: 0 },
-      { transform: `translate(0px, 0px) scale(1) rotate(${rotate}deg)`, opacity: 1 },
+      { transform: `translate(${dx}px, ${dy}px) scale(${fit}) rotate(0deg)` },
+      { transform: `translate(0px, 0px) scale(1) rotate(${rotate}deg)` },
     ],
     { duration: 500, delay, easing: SPRING, fill: 'backwards' },
   );
 }
 
-/** The reverse of `burst`: back behind the folder, shrinking to nothing. */
-export function retract(el: HTMLElement, dx: number, dy: number, rotate: number, delay: number): Promise<void> {
+/** The reverse of `burst`: back into the stack behind the folder. */
+export function retract(el: HTMLElement, dx: number, dy: number, rotate: number, delay: number, fit = 0.6): Promise<void> {
   const anim = reducedMotion()
     ? el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, delay, easing: 'ease-in', fill: 'forwards' })
     : el.animate(
         [
-          { transform: `translate(0px, 0px) scale(1) rotate(${rotate}deg)`, opacity: 1 },
-          { transform: `translate(${dx}px, ${dy}px) scale(0) rotate(0deg)`, opacity: 0 },
+          { transform: `translate(0px, 0px) scale(1) rotate(${rotate}deg)` },
+          { transform: `translate(${dx}px, ${dy}px) scale(${fit}) rotate(0deg)` },
         ],
-        { duration: 280, delay, easing: 'cubic-bezier(0.55, 0, 0.75, 0.2)', fill: 'forwards' },
+        { duration: 300, delay, easing: 'cubic-bezier(0.55, 0, 0.75, 0.2)', fill: 'forwards' },
       );
   return anim.finished.then(() => undefined, () => undefined);
 }

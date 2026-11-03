@@ -50,6 +50,9 @@ body:has(.is-home) { background: #291f18; }
   display: flex; flex-wrap: wrap; gap: 6px 26px; padding: 22px var(--h-edge) 18px; border-bottom: 1px solid var(--h-rule);
   font-size: 20px;
 }
+.home-tabs { align-items: baseline; justify-content: space-between; }
+.home-tabs nav { display: flex; flex-wrap: wrap; gap: 6px 26px; }
+.home-aside { font: 400 12px var(--h-code); color: rgba(254, 249, 230, 0.6); }
 .home-tabs a { color: var(--h-cream); text-decoration: none; opacity: 0.82; transition: opacity 150ms ease; }
 .home-tabs a:hover { opacity: 1; }
 .home-tabs a[aria-current='page'] { opacity: 1; text-decoration: underline; text-underline-offset: 6px; text-decoration-thickness: 1px; }
@@ -153,4 +156,61 @@ body:has(.is-home) { background: #291f18; }
 
 /* The piece panel keeps the app's light paper look; don't let the page's cream text leak into it. */
 .is-home .drawer { color: var(--ink); color-scheme: light; }
-.is-home .drawer h1 { font-family: var(--h-display); }
+
+/* ── Library, in the same dress ────────────────────────────────────────────────────────────── */
+.is-home .library { flex: 1; width: 100%; max-width: var(--h-max); margin: 0 auto; padding: 30px var(--h-gutter) 96px; }
+.is-home .search { max-width: 760px; margin: 0 0 36px; }
+.is-home .search-field input {
+  font: 400 32px/1.25 var(--h-garamond); color: var(--h-cream); border-bottom-color: var(--h-rule);
+}
+.is-home .search-field input::placeholder { color: rgba(254, 249, 230, 0.45); }
+.is-home .search-field input:focus { border-bottom-color: var(--h-cream); }
+.is-home .understood, .is-home .search-meta { font: 400 12px var(--h-code); color: rgba(254, 249, 230, 0.6); }
+.is-home .refine-line input { font: italic 17px var(--h-garamond); color: var(--h-cream); }
+.is-home .refine-line input::placeholder { color: rgba(254, 249, 230, 0.45); }
+.is-home .chip { background: transparent; border-color: var(--h-rule); color: var(--h-cream); font: 400 12px var(--h-code); }
+.is-home .chip button { color: rgba(254, 249, 230, 0.6); }
+.is-home .chip button:hover { color: var(--h-cream); background: rgba(254, 249, 230, 0.1); }
+.is-home .btn.quiet { color: var(--h-cream); font: 400 13px var(--h-code); }
+.is-home .btn.quiet:hover { background: rgba(254, 249, 230, 0.1); }
+.is-home .uncertain, .is-home .empty { font-family: var(--h-garamond); color: rgba(254, 249, 230, 0.75); }
+
+.is-home .results { max-width: 760px; margin: 0; }
+.is-home .result { border-bottom-color: rgba(254, 249, 230, 0.16); border-radius: 0; }
+.is-home .result:hover, .is-home .result[aria-selected='true'] { background: rgba(254, 249, 230, 0.06); }
+.is-home .result .thumb { border-radius: 0; background: var(--h-card); color: var(--h-ink); }
+.is-home .result h3 { font: 400 22px/1.2 var(--h-display); color: var(--h-cream); }
+.is-home .result .meta { font: 400 12px var(--h-code); color: rgba(254, 249, 230, 0.6); }
+.is-home .result .excerpt { font: 17px/1.5 var(--h-garamond); color: rgba(254, 249, 230, 0.8); }
+.is-home .result .why { font: 400 12px var(--h-code); color: var(--h-sage); }
+.is-home mark { background: rgba(197, 201, 176, 0.45); color: inherit; }
+
+/* browse: the board's paper cards */
+.is-home .grid { max-width: none; column-gap: 28px; }
+.is-home .tile { margin-bottom: 28px; background: var(--h-card); color: var(--h-ink); border-radius: 0; box-shadow: none; }
+.is-home .tile:hover { transform: translateY(-3px); box-shadow: 0 16px 34px rgba(0, 0, 0, 0.35); }
+.is-home .tile .body { padding: 18px 22px 22px; }
+.is-home .tile .kicker { font: 400 12px var(--h-code); letter-spacing: 0; text-transform: none; color: #57504a; }
+.is-home .tile h3 { margin: 8px 0 8px; font: 400 23px/1.12 var(--h-display); color: var(--h-ink); }
+.is-home .tile p { font: 15px/1.45 var(--h-garamond); color: var(--h-ink-2); }
+.is-home .tile .quote-text { font-size: 18px; color: var(--h-ink); }
+.is-home .tile-picture { padding: 22px 22px 0; }
+.is-home .tile-cover { padding: 22px 22px 0; background: none; justify-content: flex-start; }
+.is-home .tile-cover :is(img, video) { width: 70%; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2); }
+.is-home .tile > div[style*='aspect-ratio'] { margin: 22px 22px 0; }
+
+
+/* ── Canvases list, in the same dress (the fanned previews themselves are untouched) ─────────── */
+.is-home .canvases { max-width: var(--h-max); padding: 22px var(--h-gutter) 96px; }
+.is-home .canvases h1 { display: none; }
+.is-home .canvases .lede { margin: 0 0 30px; font: 400 12px/1.5 var(--h-code); font-style: normal; letter-spacing: 0.02em; color: rgba(254, 249, 230, 0.6); }
+.is-home .canvas-tiles { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 28px; }
+.is-home .canvas-tile { background: var(--h-card); color: var(--h-ink); box-shadow: none; }
+.is-home .canvas-tile:hover { box-shadow: 0 16px 34px rgba(0, 0, 0, 0.35); }
+.is-home .canvas-tile .label { padding: 14px 18px 16px; }
+.is-home .canvas-tile .label b { font: 400 21px/1.15 var(--h-display); color: var(--h-ink); }
+.is-home .canvas-tile .label span { font: 400 11px/1.5 var(--h-code); color: #57504a; }
+.is-home .canvas-tile .linkish { color: var(--h-navy); }
+.is-home .canvas-tile:first-child { border-color: var(--h-rule) !important; color: var(--h-cream); }
+.is-home .canvas-tile:first-child .label b { color: var(--h-cream); }
+.is-home .canvas-tile:first-child .label span { color: rgba(254, 249, 230, 0.6); }

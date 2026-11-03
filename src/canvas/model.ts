@@ -30,6 +30,10 @@ export interface NoteNode {
   h: number;
   /** How the note is drawn: plain ink text (default), a filled hub label, a "!" callout, or a big title. */
   style?: 'text' | 'label' | 'callout' | 'title';
+  /** Ink colour; absent means the canvas's default ink. */
+  color?: string;
+  /** Type size multiplier (1 by default), so a note can be drawn as large as the prints around it. */
+  scale?: number;
 }
 
 export type CanvasNode = CardNode | NoteNode;
@@ -39,6 +43,8 @@ export interface Edge {
   from: string;
   to: string;
   label?: string;
+  /** Line colour; absent means the canvas's default ink. */
+  color?: string;
 }
 
 export interface Frame {
@@ -60,6 +66,8 @@ export interface CanvasDoc {
   nodes: Record<string, CanvasNode>;
   edges: Record<string, Edge>;
   frames: Record<string, Frame>;
+  /** Bumped when a built-in sample's layout changes, so older saved copies can be updated once. */
+  layoutVersion?: number;
 }
 
 export interface Rect {
@@ -139,6 +147,26 @@ export function setEdgeLabel(doc: CanvasDoc, id: string, label: string): CanvasD
   const e = doc.edges[id];
   if (!e) return doc;
   return touch(doc, { edges: { ...doc.edges, [id]: { ...e, label: label.trim() || undefined } } });
+}
+
+/** Recolour notes and links (anything else among `ids` is left alone). Passing no colour resets to the default ink. */
+export function setInk(doc: CanvasDoc, ids: string[], color?: string): CanvasDoc {
+  const nodes = { ...doc.nodes };
+  const edges = { ...doc.edges };
+  let changed = false;
+  for (const id of ids) {
+    const n = nodes[id];
+    if (n?.kind === 'note' && n.color !== color) {
+      nodes[id] = { ...n, color };
+      changed = true;
+    }
+    const e = edges[id];
+    if (e && e.color !== color) {
+      edges[id] = { ...e, color };
+      changed = true;
+    }
+  }
+  return changed ? touch(doc, { nodes, edges }) : doc;
 }
 
 export function addFrame(doc: CanvasDoc, around: Rect[], title = 'Untitled group'): [CanvasDoc, string] {

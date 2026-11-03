@@ -9,7 +9,9 @@ import { centroid, type Vec } from '../search/vectors';
 import { CardArt } from './CardArt';
 import { Picture } from './Picture';
 import { formatBytes, IMAGE_RATIO, useImageFacts } from './collections/derive';
-import { boxOf, burst, fade, reducedMotion, retract, settle, zoomIn, zoomOut, type Box } from './collections/motion';
+import { clampX, clampY, FOLDER_W, loadPositions, placeFolders, savePositions, type Point } from './collections/positions';
+import { markVisited, visitedLabel } from './collections/visited';
+import { boxOf, burst, fade, reducedMotion, retract, settle, slideAway, zoomIn, zoomOut, type Box } from './collections/motion';
 import './collections.css';
 
 /**
@@ -50,8 +52,8 @@ export function CollectionsSpace({ route }: { route: Route }) {
   return (
     <>
       <Overview
-        receded={!!shown}
-        hidden={shown}
+        receded={!!name}
+        hidden={name}
         preview={preview}
         onPreview={setPreview}
         onOpen={(n, folder, card) => {
@@ -116,28 +118,130 @@ function Overview({ receded, hidden, preview, onPreview, onOpen }: {
 
   const folderEl = (n: string) => document.querySelector<HTMLElement>(`.cl-folder[data-folder="${CSS.escape(n)}"]`)!;
 
+  const cards = useLibrary();
+  const membersOf = useMemo(() => {
+    const by = new Map<string, Card[]>();
+    for (const c of [...cards].sort((a, b) => Date.parse(b.savedAt) - Date.parse(a.savedAt))) {
+      for (const n of c.collections ?? []) by.set(n, [...(by.get(n) ?? []), c]);
+    }
+    return (n: string) => by.get(n) ?? [];
+  }, [cards]);
+
+  // Folders sit where they were dropped. The area's width sets the grid for folders never moved.
+  const area = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(0);
+  useLayoutEffect(() => {
+    const el = area.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setWidth(el.clientWidth));
+    ro.observe(el);
+    setWidth(el.clientWidth);
+    return () => ro.disconnect();
+  }, []);
+  const [saved, setSaved] = useState(loadPositions);
+  const [dragging, setDragging] = useState<{ name: string } & Point>();
+  const grab = useRef<{ name: string; px: number; py: number; from: Point; moved: boolean }>();
+  const swallowClick = useRef(false);
+  const layout = useMemo(() => placeFolders(collections.map((c) => c.name), saved, width), [collections, saved, width]);
+  const place = (name: string, p: Point) =>
+    setSaved((s) => {
+      const next = { ...s, [name]: { x: clampX(p.x, width), y: clampY(p.y) } };
+      savePositions(next);
+      return next;
+    });
+
+  // The softening follows the request, not the cards: it starts clearing as soon as a preview closes,
+  // while the cards are still sliding back.
   return (
-    <main className={`cl-overview ${receded ? 'is-receded' : ''} ${previewing ? 'is-previewing' : ''}`} aria-hidden={receded || undefined}>
+    <main className={`cl-overview ${receded ? 'is-receded' : ''} ${!receded && preview ? 'is-previewing' : ''}`} aria-hidden={receded || undefined}>
       <h1>Collections</h1>
-      <div className="cl-folders">
-        {collections.map((c, i) => (
-          <button
-            key={c.name}
-            className={`cl-folder cl-lift ${previewing && active === c.name ? 'is-active' : ''}`}
-            data-folder={c.name}
-            style={{ visibility: hidden === c.name ? 'hidden' : undefined, animationDelay: `${Math.min(i, 10) * 30}ms` }}
-            onClick={(e) => (preview === c.name ? onOpen(c.name, e.currentTarget) : onPreview(c.name))}
-            aria-expanded={preview === c.name}
-          >
-            {preview === c.name && !receded && <span className="cl-open-chip">Open</span>}
-            <span className="cl-label">Collection</span>
-            <span className="cl-folder-foot">
-              <b>{c.name}</b>
-              <span className="cl-label cl-dark">{c.cardIds.length} {c.cardIds.length === 1 ? 'item' : 'items'}</span>
-            </span>
-          </button>
-        ))}
-        <NewFolder onCreated={(n) => goCollection(n)} />
+      <div ref={area} className="cl-folders" style={{ height: layout.height, '--folder-w': `${FOLDER_W}px` } as CSSProperties}>
+        {width > 0 && collections.map((c, i) => {
+          const members = membersOf(c.name);
+          const at = dragging?.name === c.name ? dragging : layout.at.get(c.name)!;
+          // First click spreads the contents out, a second puts them away; only "Open" opens.
+          const toggle = () => onPreview(preview === c.name ? undefined : c.name);
+          return (
+            <div
+              key={c.name}
+              className={`cl-folder cl-lift ${previewing && active === c.name ? 'is-active' : ''} ${dragging?.name === c.name ? 'is-dragging' : ''}`}
+              data-folder={c.name}
+              role="button"
+              tabIndex={0}
+              aria-expanded={preview === c.name}
+              aria-label={`${c.name}, ${members.length} ${members.length === 1 ? 'item' : 'items'}. Arrow keys move it.`}
+              style={{ left: at.x, top: at.y, visibility: hidden === c.name ? 'hidden' : undefined, animationDelay: `${Math.min(i, 10) * 30}ms` }}
+              onClick={() => {
+                if (swallowClick.current) return void (swallowClick.current = false);
+                toggle();
+              }}
+              // Drag to move, Finder-style. A press that barely moves is still a click. Folders stay
+              // put while one is spread open, so its cards keep their place.
+              onPointerDown={(e) => {
+                if (e.button !== 0 || preview || (e.target as HTMLElement).closest('.cl-open-chip')) return;
+                grab.current = { name: c.name, px: e.clientX, py: e.clientY, from: layout.at.get(c.name)!, moved: false };
+                e.currentTarget.setPointerCapture(e.pointerId);
+              }}
+              onPointerMove={(e) => {
+                const g = grab.current;
+                if (!g) return;
+                const [dx, dy] = [e.clientX - g.px, e.clientY - g.py];
+                if (!g.moved && Math.hypot(dx, dy) < 5) return;
+                g.moved = true;
+                setDragging({ name: g.name, x: clampX(g.from.x + dx, width), y: clampY(g.from.y + dy) });
+              }}
+              onPointerUp={(e) => {
+                const g = grab.current;
+                grab.current = undefined;
+                if (!g?.moved) return;
+                swallowClick.current = true;
+                place(g.name, { x: g.from.x + e.clientX - g.px, y: g.from.y + e.clientY - g.py });
+                setDragging(undefined);
+              }}
+              onPointerCancel={() => {
+                grab.current = undefined;
+                setDragging(undefined);
+              }}
+              onKeyDown={(e) => {
+                if (e.target !== e.currentTarget) return;
+                if (e.key === 'Enter' || e.key === ' ') return void (e.preventDefault(), toggle());
+                const step = e.shiftKey ? 48 : 12;
+                const d = ({ ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] } as Record<string, number[]>)[e.key];
+                if (!d || preview) return;
+                e.preventDefault();
+                place(c.name, { x: at.x + d[0], y: at.y + d[1] });
+              }}
+            >
+              <span className="cl-folder-peek" aria-hidden>
+                {members.slice(0, 3).map((m) => (
+                  <span key={m.id} className={m.type === 'image' || m.cover ? 'is-picture' : 'is-paper'}>
+                    {m.type === 'image' || m.cover ? <CardArt card={m} ratio={1.3} /> : <b>{m.title}</b>}
+                  </span>
+                ))}
+              </span>
+              <svg className="cl-folder-shape" viewBox="0 0 680 1000" preserveAspectRatio="none" aria-hidden>
+                <path d={FOLDER_PATH} />
+              </svg>
+              {preview === c.name && !receded && (
+                <button
+                  className="cl-open-chip"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpen(c.name, e.currentTarget.closest<HTMLElement>('.cl-folder')!);
+                  }}
+                >
+                  + Open
+                </button>
+              )}
+              <span className="cl-folder-foot">
+                <span className="cl-folder-kind">{topTag(members)}</span>
+                <b>{c.name}</b>
+                <span className="cl-folder-visited">{visitedLabel(c.name)}</span>
+              </span>
+            </div>
+          );
+        })}
+        {width > 0 && <NewFolder style={{ left: layout.spare.x, top: layout.spare.y }} onCreated={(n) => goCollection(n)} />}
         {pv && !receded && (
           <Cluster
             key={pv}
@@ -151,6 +255,17 @@ function Overview({ receded, hidden, preview, onPreview, onOpen }: {
       </div>
     </main>
   );
+}
+
+/** A folder with a tab on its right edge, drawn in a 680 × 1000 box (the body is the left 600). */
+const FOLDER_PATH =
+  'M48,0 H560 C585,0 600,15 600,40 C600,75 612,92 640,108 C668,124 680,142 680,176 V400 C680,432 668,448 640,464 C612,480 600,497 600,532 V952 C600,980 580,1000 552,1000 H48 C20,1000 0,980 0,952 V48 C0,20 20,0 48,0 Z';
+
+/** The word a folder is labelled with: its most common tag. */
+function topTag(members: Card[]): string {
+  const n = new Map<string, number>();
+  for (const c of members) for (const t of c.tags ?? []) n.set(t, (n.get(t) ?? 0) + 1);
+  return [...n].sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'collection';
 }
 
 // The preview's cards, as they lay when the board opened: the board settles each from here.
@@ -173,10 +288,15 @@ type SlotKind = 'image' | 'doc' | 'note' | 'more';
 interface Slot { key: string; kind: SlotKind; card?: Card; more?: number; x: number; y: number; w: number; h: number; rotate: number; last: boolean; order: number }
 
 const ROWS = {
-  image: { w: 150, h: 210, step: 124, max: 2, indent: 0, gap: -6 },
-  doc: { w: 85, h: 115, step: 76, max: 4, indent: 12, gap: 16 },
-  note: { w: 70, h: 50, step: 62, max: 4, indent: 26, gap: 0 },
+  image: { w: 150, h: 262, step: 170, max: 2, indent: 0, gap: 16 },
+  doc: { w: 105, h: 146, step: 111, max: 4, indent: 0, gap: 12 },
+  note: { w: 84, h: 84, step: 89, max: 4, indent: 4, gap: 0 },
 } as const;
+/** The two photos differ in size and sit on a shared baseline, as if dropped there. */
+const IMAGE_SIZES = [
+  [150, 196],
+  [166, 262],
+] as const;
 // Docs and notes land first; photos last, on top.
 const BURST_ORDER: Record<SlotKind, number> = { doc: 0, note: 1, more: 1, image: 2 };
 
@@ -203,13 +323,14 @@ function scatterLayout(members: Card[]) {
     if (k === 'note' && more > 0) entries.push({ key: '+more', kind: 'more' });
     if (!entries.length) continue;
     entries.forEach((e, i) => {
+      const [w, h] = k === 'image' ? IMAGE_SIZES[i] : [row.w, row.h];
       slots.push({
         ...e,
         more: e.kind === 'more' ? more : undefined,
-        x: row.indent + i * row.step + (unit(`${e.key}:x`) - 0.5) * 6,
-        y: y + (unit(`${e.key}:y`) - 0.5) * 10,
-        w: row.w,
-        h: row.h,
+        x: row.indent + i * row.step + (unit(`${e.key}:x`) - 0.5) * 8,
+        y: y + (row.h - h) + (unit(`${e.key}:y`) - 0.5) * 14,
+        w,
+        h,
         rotate: Math.round((unit(`${e.key}:r`) * 8 - 4) * 10) / 10,
         last: i === entries.length - 1,
         order: 0,
@@ -235,14 +356,15 @@ function Cluster({ name, leaving, onLeft, onOpenCard, onOpenAll }: { name: strin
   const { slots, width, height, photos } = useMemo(() => scatterLayout(members), [members]);
   const wrap = useRef<HTMLDivElement>(null);
   // Where the cluster sits (in .cl-folders coordinates), whether it fans left, and the folder's centre in cluster coordinates.
-  const [place, setPlace] = useState<{ left: number; top: number; scale: number; flip: boolean; fx: number; fy: number }>();
+  const [place, setPlace] = useState<{ left: number; top: number; scale: number; flip: boolean; fx: number; fy: number; fit: number[] }>();
 
   useLayoutEffect(() => {
     const folder = document.querySelector<HTMLElement>(`.cl-folder[data-folder="${CSS.escape(name)}"]`);
     if (!folder) return;
     const r = folder.getBoundingClientRect();
-    const [gap, edge, vw] = [28, 16, document.documentElement.clientWidth];
-    const top = folder.offsetTop + (photos ? -24 : 12);
+    // Tucked against the folder's edge (just behind its tab), so the cards only travel a little.
+    const [gap, edge, vw] = [-6, 16, document.documentElement.clientWidth];
+    const top = folder.offsetTop + (photos ? -(ROWS.image.h - folder.offsetHeight * 0.3) : folder.offsetHeight * 0.1);
     let p: { left: number; top: number; scale: number; flip: boolean };
     if (r.right + gap + width <= vw - edge) p = { left: folder.offsetLeft + folder.offsetWidth + gap, top, scale: 1, flip: false };
     else if (r.left - gap - width >= edge) p = { left: folder.offsetLeft - gap - width, top, scale: 1, flip: true };
@@ -251,7 +373,14 @@ function Cluster({ name, leaving, onLeft, onOpenCard, onOpenAll }: { name: strin
       const scale = Math.min(1, (vw - 2 * edge) / width);
       p = { left: edge - (r.left - folder.offsetLeft), top: folder.offsetTop + folder.offsetHeight + 24, scale, flip: false };
     }
-    setPlace({ ...p, fx: (folder.offsetLeft + folder.offsetWidth / 2 - p.left) / p.scale, fy: (folder.offsetTop + folder.offsetHeight / 2 - p.top) / p.scale });
+    // Closed, every card sits behind the folder's body (the part left of the tab), shrunk to fit.
+    const [bw, bh] = [folder.offsetWidth * (600 / 680) * 0.86, folder.offsetHeight * 0.86];
+    setPlace({
+      ...p,
+      fx: (folder.offsetLeft + folder.offsetWidth * (300 / 680) - p.left) / p.scale,
+      fy: (folder.offsetTop + folder.offsetHeight / 2 - p.top) / p.scale,
+      fit: slots.map((s) => Math.min(1, bw / p.scale / s.w, bh / p.scale / s.h)),
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -264,7 +393,7 @@ function Cluster({ name, leaving, onLeft, onOpenCard, onOpenAll }: { name: strin
     els().forEach((el, i) => {
       const s = slots[i];
       const [dx, dy] = towardFolder(s);
-      burst(el, dx, dy, s.rotate, s.order * 35);
+      burst(el, dx, dy, s.rotate, s.order * 35, place.fit[i]);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [place]);
@@ -278,7 +407,7 @@ function Cluster({ name, leaving, onLeft, onOpenCard, onOpenAll }: { name: strin
         const s = slots[i];
         el.getAnimations().forEach((a) => a.cancel());
         const [dx, dy] = towardFolder(s);
-        return retract(el, dx, dy, s.rotate, (last - s.order) * 20);
+        return retract(el, dx, dy, s.rotate, (last - s.order) * 20, place.fit[i]);
       }),
     ).then(onLeft);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -319,14 +448,14 @@ function Cluster({ name, leaving, onLeft, onOpenCard, onOpenAll }: { name: strin
   );
 }
 
-function NewFolder({ onCreated }: { onCreated: (name: string) => void }) {
+function NewFolder({ style, onCreated }: { style?: CSSProperties; onCreated: (name: string) => void }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [purpose, setPurpose] = useState('');
   const [err, setErr] = useState('');
   if (!open) {
     return (
-      <button className="cl-folder cl-folder-new" onClick={() => setOpen(true)}>
+      <button className="cl-folder cl-folder-new" style={style} onClick={() => setOpen(true)}>
         <span className="cl-label">+ New collection</span>
       </button>
     );
@@ -334,6 +463,7 @@ function NewFolder({ onCreated }: { onCreated: (name: string) => void }) {
   return (
     <form
       className="cl-folder cl-folder-new is-open"
+      style={style}
       onSubmit={(e) => {
         e.preventDefault();
         const made = library.createCollection(name, purpose);
@@ -383,6 +513,8 @@ function BoardLayer({ name, route, leaving, origin, scatter, cardOrigin, onLeft 
   );
   const created = members.length ? Math.min(...members.map((c) => Date.parse(c.savedAt))) : Date.now();
 
+  useEffect(() => markVisited(name), [name]);
+
   useLayoutEffect(() => {
     const el = layer.current;
     if (!el) return;
@@ -391,7 +523,9 @@ function BoardLayer({ name, route, leaving, origin, scatter, cardOrigin, onLeft 
       return;
     }
     // From the preview: the gray rises over the canvas, the scattered cards settle into the board.
-    el.animate([{ backgroundColor: 'rgba(233, 235, 238, 0)' }, { backgroundColor: '#e9ebee' }], { duration: 300, easing: 'ease-out' });
+    // Fade in the layer's own colour (whatever the theme makes it), never a fixed one.
+    const bg = getComputedStyle(el).backgroundColor;
+    el.animate([{ backgroundColor: bg.replace(/rgba?\(([^,]+),([^,]+),([^,)]+).*\)/, 'rgba($1,$2,$3,0)') }, { backgroundColor: bg }], { duration: 300, easing: 'ease-out' });
     el.querySelectorAll<HTMLElement>('.cl-toolbar, .cl-corner-bl, .cl-corner-br, .cl-edge-count').forEach((c) =>
       c.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, delay: 150, easing: 'ease-out', fill: 'backwards' }),
     );
@@ -406,8 +540,8 @@ function BoardLayer({ name, route, leaving, origin, scatter, cardOrigin, onLeft 
 
   useEffect(() => {
     if (!leaving || !layer.current) return;
-    const folder = document.querySelector<HTMLElement>(`[data-folder="${CSS.escape(name)}"]`);
-    zoomOut(layer.current, folder ? boxOf(folder) : undefined, [{ borderRadius: '0px' }, { borderRadius: '14px' }]).then(onLeft);
+    // Closing: the whole page slides down and away, uncovering the folders.
+    slideAway(layer.current).then(onLeft);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leaving]);
 

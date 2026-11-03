@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState } from 'react';
 import type { TrailEntry } from '../data/types';
 import { agoLabel, newEntry, pieceImageSrc, type Piece } from '../handful/handful';
 import { reencodeImage } from '../handful/image';
@@ -6,38 +6,8 @@ import { handful, today, useHandful } from '../handful/store';
 import { navigate, type Route } from '../router';
 import { HandfulBoard, handsLabel } from './HandfulBoard';
 import { Picture } from './Picture';
-import './home.css';
 
 const KIND_LABEL: Record<Piece['kind'], string> = { book: 'Book', note: 'Note', quote: 'Quote', song: 'Song', recipe: 'Recipe', photo: 'Photo' };
-
-/**
- * The home page's masthead. The about links (Purpose … Request Demo) are drawn as in the design but
- * lead nowhere yet: there are no such pages, and no accounts to log in to.
- */
-export function HomeHeader({ tabs }: { tabs: ReactNode }) {
-  return (
-    <header className="home-head">
-      <div className="home-bar">
-        <a className="home-logo" href="#/today">
-          <img src="/brand/wordmark.png" alt="In Other Hands" width={1394} height={366} />
-        </a>
-        <nav className="home-links" aria-label="About">
-          <span>Purpose</span>
-          <span>Experience</span>
-          <span>Newsroom</span>
-          <span className="home-links-gap" />
-          <span>Login</span>
-          <span className="is-underlined">Request Demo</span>
-          <span className="home-arrow" aria-hidden>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12h16M14 6l6 6-6 6" /></svg>
-          </span>
-        </nav>
-      </div>
-      <h1 className="home-title">In your hands</h1>
-      <nav className="home-tabs" aria-label="Sections">{tabs}</nav>
-    </header>
-  );
-}
 
 export function TodayView({ route }: { route: Route }) {
   const state = useHandful();

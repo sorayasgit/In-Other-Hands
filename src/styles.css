@@ -306,3 +306,32 @@ mark { background: var(--mark); color: inherit; border-radius: 2px; padding: 0 1
 .tile-cover :is(img, video) { display: block; width: 62%; height: auto; box-shadow: 0 6px 16px rgba(40, 30, 20, 0.18); }
 .tile-picture { display: block; width: 100%; height: auto; }
 .drawer-cover { display: block; width: 180px; height: auto; margin: 14px 0 6px; box-shadow: 0 6px 18px rgba(40, 30, 20, 0.18); }
+
+/* ── The card panel, pared back: very wide margins, a small picture, a small heading, plain sans
+   for reading, round swatches. Used wherever a card opens (Library, Collections, canvases). ──── */
+aside.drawer { width: min(600px, 100%); padding: 56px 88px 88px; box-shadow: -1px 0 0 rgba(41, 31, 24, 0.06), -24px 0 60px rgba(41, 31, 24, 0.08); }
+aside.drawer .drawer-top { margin-bottom: 32px; }
+aside.drawer .kicker { font: 400 10px/1.4 'Source Code Pro', ui-monospace, Menlo, monospace; letter-spacing: 0.06em; text-transform: uppercase; color: #9a938a; }
+aside.drawer .drawer-top .btn.quiet { font-size: 13px; padding: 4px 8px; color: #9a938a; }
+aside.drawer h1 { font: 400 22px/1.25 'BenguiatProITC-Book', 'Benguiat Pro ITC', 'EB Garamond', serif; letter-spacing: 0; margin: 0 0 28px; color: var(--ink); }
+aside.drawer .art { width: 220px; max-width: 100%; border-radius: 3px; margin: 0 0 18px; }
+aside.drawer .drawer-cover { width: 140px; margin: 0 0 18px; }
+aside.drawer .palette { gap: 8px; margin: 0 0 32px; }
+aside.drawer .palette span { width: 16px; height: 16px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.1); }
+aside.drawer .prose { font: 400 14px/1.65 'Source Sans 3', 'Source Sans Pro', system-ui, sans-serif; color: #5c554e; margin: 0 0 16px; }
+aside.drawer .prose .kicker { margin-right: 4px; }
+aside.drawer .big-quote { font: italic 18px/1.5 'EB Garamond', Georgia, serif; margin: 0 0 24px; padding-left: 14px; border-left-width: 1px; }
+aside.drawer section { margin-top: 36px; }
+aside.drawer section > .kicker { display: block; margin-bottom: 10px; }
+aside.drawer textarea {
+  min-height: 48px; border: 0; border-bottom: 1px solid var(--hair); border-radius: 0; background: transparent; padding: 4px 0 8px;
+  font: 400 14px/1.6 'Source Sans 3', 'Source Sans Pro', system-ui, sans-serif;
+}
+aside.drawer textarea:focus { outline: none; border-bottom-color: var(--ink-2); }
+aside.drawer .actions { gap: 8px; margin-top: 36px; }
+aside.drawer .actions .btn { font: 400 12px 'Source Sans 3', system-ui, sans-serif; padding: 6px 14px; }
+aside.drawer .chip { font: 400 12px 'Source Sans 3', system-ui, sans-serif; }
+aside.drawer :is(.mini .t, .mini-open .t) { font: 400 13px/1.3 'Source Sans 3', system-ui, sans-serif; }
+aside.drawer :is(.mini .s, .mini-open .s) { font: 400 10px 'Source Code Pro', ui-monospace, monospace; }
+aside.drawer .mini .thumb { width: 32px; height: 32px; border-radius: 3px; }
+@media (max-width: 640px) { aside.drawer { padding: 28px 22px 56px; } }

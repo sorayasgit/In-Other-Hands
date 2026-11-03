@@ -101,7 +101,7 @@ export const CanvasNote = memo(function CanvasNote({ node, selected, editing, on
     <div
       className={`cv-node cv-note s-${node.style ?? 'text'} ${selected ? 'is-selected' : ''} ${editing ? 'is-editing' : ''}`}
       data-node-id={node.id}
-      style={{ left: node.x, top: node.y, width: node.w, height: node.h }}
+      style={{ left: node.x, top: node.y, width: node.w, height: node.h, ['--note-ink' as string]: node.color, ['--note-scale' as string]: node.scale }}
     >
       {editing ? (
         <textarea

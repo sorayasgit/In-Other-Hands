@@ -6,7 +6,8 @@ import { href, navigate, useRoute } from './router';
 import { startSemanticSearch, useSearchService } from './search/searchService';
 import { CollectionsSpace } from './ui/CollectionsView';
 import { LibraryView } from './ui/LibraryView';
-import { HomeHeader, TodayView } from './ui/TodayView';
+import { HomeHeader } from './ui/HomeHeader';
+import { TodayView } from './ui/TodayView';
 
 export function App() {
   const route = useRoute();
@@ -47,31 +48,16 @@ export function App() {
       <a href={href('/canvases')} aria-current={section === 'canvases' ? 'page' : undefined}>Canvases</a>
     </>
   );
-  if (onToday) {
-    return (
-      <div className="shell is-home">
-        <HomeHeader tabs={tabs} />
-        <TodayView route={route} />
-      </div>
-    );
-  }
+  const searchStatus = (
+    <span title="Meaning-based search runs on this device; nothing is sent anywhere.">
+      <i className={`dot ${status === 'ready' ? 'on' : ''}`} />
+      {status === 'ready' ? 'search understands meaning' : status === 'loading' ? 'loading search model…' : 'keyword search only'}
+    </span>
+  );
   return (
-    <div className="shell">
-      <header className="topbar">
-        <a className="wordmark" href={href('/')}>In Other Hands</a>
-        <nav className="nav">{tabs}</nav>
-        <span className="status" title="Meaning-based search runs on this device; nothing is sent anywhere.">
-          <i className={`dot ${status === 'ready' ? 'on' : ''}`} />
-          {status === 'ready' ? 'search understands meaning' : status === 'loading' ? 'loading search model…' : 'keyword search only'}
-        </span>
-      </header>
-      {onCanvases ? (
-        <CanvasList />
-      ) : onCollections ? (
-        <CollectionsSpace route={route} />
-      ) : (
-        <LibraryView route={route} />
-      )}
+    <div className="shell is-home">
+      <HomeHeader title={onToday ? 'In your hands' : onCollections ? 'Collections' : onCanvases ? 'Canvases' : 'Library'} tabs={tabs} aside={section === 'library' ? searchStatus : undefined} />
+      {onToday ? <TodayView route={route} /> : onCollections ? <CollectionsSpace route={route} /> : onCanvases ? <CanvasList /> : <LibraryView route={route} />}
     </div>
   );
 }

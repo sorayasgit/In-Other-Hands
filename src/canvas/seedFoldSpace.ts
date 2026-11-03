@@ -7,21 +7,33 @@ import { addCard, addEdge, addFrame, addNote, emptyCanvas, updateFrame, updateNo
 
 export const FOLD_SPACE_ID = 'kfoldspace';
 
+/**
+ * The map was first drawn with small prints and lots of air; seen whole it read as specks. These
+ * spread the layout a little and grow everything on it more, so it holds up when zoomed out.
+ */
+export const FOLD_SPREAD = 1.3;
+export const FOLD_PRINT = 1.9;
+export const FOLD_TYPE = 1.5;
+const MAX_PRINT = 1.3;
+/** The layout version this file builds; maps saved before it are grown on load. */
+export const FOLD_LAYOUT = 2;
+
 export function buildFoldSpace(): CanvasDoc {
-  let doc: CanvasDoc = { ...emptyCanvas('Fold space — research map'), id: FOLD_SPACE_ID };
+  let doc: CanvasDoc = { ...emptyCanvas('Fold space — research map'), id: FOLD_SPACE_ID, layoutVersion: FOLD_LAYOUT };
   const ids: Record<string, string> = {};
   let n = 0;
 
   const note = (key: string, text: string, x: number, y: number, w: number, h: number, style: NoteNode['style']) => {
-    const [d, id] = addNote(doc, x, y, text);
-    doc = updateNode(d, id, { w, h, style });
+    const t = style === 'title' ? FOLD_SPREAD : FOLD_TYPE;
+    const [d, id] = addNote(doc, x * FOLD_SPREAD, y * FOLD_SPREAD, text);
+    doc = updateNode(d, id, { w: w * t, h: h * t, style, scale: t });
     ids[key] = id;
   };
   const label = (key: string, text: string, x: number, y: number) => note(key, text, x, y, text.length * 12 + 36, 46, 'label');
   const text = (key: string, t: string, x: number, y: number, w = 200, h = 40) => note(key, t, x, y, w, h, 'text');
   const alert = (x: number, y: number) => note(`!${n++}`, '!', x, y, 40, 50, 'callout');
   const img = (key: string, itemId: string, x: number, y: number, scale = 0.35) => {
-    const [d, id] = addCard(doc, itemId, x, y, scale);
+    const [d, id] = addCard(doc, itemId, x * FOLD_SPREAD, y * FOLD_SPREAD, Math.min(MAX_PRINT, scale * FOLD_PRINT));
     doc = d;
     ids[key] = id;
   };
@@ -90,7 +102,7 @@ export function buildFoldSpace(): CanvasDoc {
   text('issueText', 'How might a room fold its furniture away so the same few square metres can hold a meal, a desk and a guest bed in one day?', 440, 1270, 250, 190);
   img('issueIcon', 'c73', 480, 1500, 0.42);
   alert(640, 1120);
-  let [d, loop] = addFrame(doc, [{ x: 420, y: 1160, w: 290, h: 470 }], '');
+  let [d, loop] = addFrame(doc, [{ x: 420 * FOLD_SPREAD, y: 1160 * FOLD_SPREAD, w: 290 * FOLD_SPREAD * 1.25, h: 470 * FOLD_SPREAD * 1.15 }], '');
   doc = updateFrame(d, loop, { tone: 'ink' });
   link('question', 'issue');
 
@@ -164,4 +176,19 @@ export function buildFoldSpace(): CanvasDoc {
   link('install', 'inst0', 'inst1', 'inst2', 'inst3', 'inst5', 'inst6');
 
   return doc;
+}
+
+/** Rescale a Fold space map saved before the layout grew (keeps whatever was added or moved). */
+export function regrowFoldSpace(doc: CanvasDoc): CanvasDoc {
+  const nodes = Object.fromEntries(
+    Object.entries(doc.nodes).map(([id, n]) => {
+      if (n.kind === 'card') return [id, { ...n, x: n.x * FOLD_SPREAD, y: n.y * FOLD_SPREAD, scale: Math.min(MAX_PRINT, n.scale * FOLD_PRINT) }];
+      const t = n.style === 'title' ? FOLD_SPREAD : FOLD_TYPE;
+      return [id, { ...n, x: n.x * FOLD_SPREAD, y: n.y * FOLD_SPREAD, w: n.w * t, h: n.h * t, scale: (n.scale ?? 1) * t }];
+    }),
+  );
+  const frames = Object.fromEntries(
+    Object.entries(doc.frames).map(([id, f]) => [id, { ...f, x: f.x * FOLD_SPREAD, y: f.y * FOLD_SPREAD, w: f.w * FOLD_SPREAD * 1.25, h: f.h * FOLD_SPREAD * 1.15 }]),
+  );
+  return { ...doc, nodes, frames, layoutVersion: FOLD_LAYOUT };
 }

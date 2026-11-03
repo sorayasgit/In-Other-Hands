@@ -56,3 +56,26 @@ export const IconFit = () => (
     <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
   </svg>
 );
+
+export const IconFile = () => (
+  <svg {...P} width={13} height={13}>
+    <path d="M6 3h8l4 4v14H6z" />
+    <path d="M14 3v4h4" />
+  </svg>
+);
+export const IconOpen = () => (
+  <svg {...P} width={15} height={15}>
+    <path d="M14 4h6v6M20 4l-8 8" />
+    <path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />
+  </svg>
+);
+export const IconKeep = () => (
+  <svg {...P} width={15} height={15}>
+    <path d="M6 3h12v18l-6-4-6 4z" />
+  </svg>
+);
+export const IconTrash = () => (
+  <svg {...P} width={15} height={15}>
+    <path d="M4 7h16M10 7V5h4v2M6.5 7l1 12.5h9L17.5 7" />
+  </svg>
+);

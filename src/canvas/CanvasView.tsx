@@ -5,7 +5,8 @@ import { engine, useSearchService } from '../search/searchService';
 import { CardDrawer } from '../ui/CardDrawer';
 import { CanvasCard, CanvasNote } from './CanvasNodes';
 import { CanvasSidebar, DRAG_TYPE } from './CanvasSidebar';
-import { IconFit, IconGroup, IconIdeas, IconLibrary, IconLinks, IconMap, IconNote, IconRedo, IconUndo } from './icons';
+import { IconFile, IconFit, IconGroup, IconIdeas, IconKeep, IconLibrary, IconLinks, IconMap, IconNote, IconOpen, IconRedo, IconTrash, IconUndo } from './icons';
+import type { Card } from '../data/types';
 import { Minimap } from './Minimap';
 import {
   addCard,
@@ -21,6 +22,7 @@ import {
   placeAll,
   removeItems,
   setEdgeLabel,
+  setInk,
   updateFrame,
   updateNode,
   type Camera,
@@ -87,6 +89,9 @@ function CanvasEditor({ initial, focus }: { initial: CanvasDoc; focus?: string }
 
   const rootRef = useRef<HTMLDivElement>(null);
   const gesture = useRef<Gesture>();
+  // True only while something is actually being dragged (a plain click never sets it), so the
+  // selection frame hides during a drag and reappears the moment it ends.
+  const [dragging, setDragging] = useState(false);
   const space = useRef(false);
   const camRef = useRef(cam);
   camRef.current = cam;
@@ -252,7 +257,11 @@ function CanvasEditor({ initial, focus }: { initial: CanvasDoc; focus?: string }
 
   const onPointerDown = (e: React.PointerEvent) => {
     if (e.button === 2) return;
-    rootRef.current!.setPointerCapture(e.pointerId);
+    try {
+      rootRef.current!.setPointerCapture(e.pointerId);
+    } catch {
+      // No live pointer behind this event (synthetic input): carry on without capture.
+    }
     const target = e.target as HTMLElement;
 
     if (e.button === 1 || space.current) {
@@ -307,6 +316,7 @@ function CanvasEditor({ initial, focus }: { initial: CanvasDoc; focus?: string }
       const dx = (e.clientX - g.sx) / z;
       const dy = (e.clientY - g.sy) / z;
       if (!g.moved && Math.hypot(dx * z, dy * z) < 3) return;
+      if (!g.moved) setDragging(true);
       g.moved = true;
       const pos = new Map<string, { x: number; y: number }>();
       for (const [mid, p] of g.start) pos.set(mid, { x: p.x + dx, y: p.y + dy });
@@ -323,6 +333,7 @@ function CanvasEditor({ initial, focus }: { initial: CanvasDoc; focus?: string }
       for (const f of Object.values(doc.frames)) if (contains(r, { ...f, h: 30 })) hit.add(f.id);
       setSel(hit);
     } else if (g.kind === 'resize') {
+      if (!dragging) setDragging(true);
       const dx = (e.clientX - g.sx) / z;
       const dy = (e.clientY - g.sy) / z;
       if (g.scale !== undefined) {
@@ -341,6 +352,7 @@ function CanvasEditor({ initial, focus }: { initial: CanvasDoc; focus?: string }
   const onPointerUp = (e: React.PointerEvent) => {
     const g = gesture.current;
     gesture.current = undefined;
+    setDragging(false);
     if (!g) return;
     if (g.kind === 'move' && g.moved) commit(histRef.current.present, g.base);
     else if (g.kind === 'resize') commit(histRef.current.present, g.base);
@@ -563,6 +575,8 @@ function CanvasEditor({ initial, focus }: { initial: CanvasDoc; focus?: string }
 
   const single = sel.size === 1 ? doc.nodes[[...sel][0]] : undefined;
   const singleRect = single ? rectOf(single.id) : undefined;
+  const singleEdge = sel.size === 1 ? doc.edges[[...sel][0]] : undefined;
+  const recolour = (color?: string) => commit(setInk(doc, [...sel], color));
   const pct = Math.round(cam.z * 100);
 
   // Links are single soft arcs that start and end just outside each card (where a small open
@@ -596,6 +610,11 @@ function CanvasEditor({ initial, focus }: { initial: CanvasDoc; focus?: string }
     };
   };
   const stroke = 1.25 / Math.min(1, cam.z);
+  // Dots every 24 world units, thinned out (doubled) when zoomed far out so they never crowd.
+  let dotStep = 24 * cam.z;
+  while (dotStep < 14) dotStep *= 2;
+  // …and fade as you zoom out, so a wide view reads as calm paper rather than a field of specks.
+  const dotAlpha = Math.max(0.25, Math.min(1, (cam.z - 0.2) / 0.6)).toFixed(2);
 
   return (
     <div className="cv-root">
@@ -615,11 +634,12 @@ function CanvasEditor({ initial, focus }: { initial: CanvasDoc; focus?: string }
       <div
         ref={rootRef}
         className="cv-stage"
-        style={{ backgroundPosition: `${cam.x}px ${cam.y}px`, backgroundSize: `${120 * cam.z}px ${120 * cam.z}px` }}
+        style={{ backgroundPosition: `${cam.x}px ${cam.y}px`, backgroundSize: `${dotStep}px ${dotStep}px`, ['--dot-a' as string]: dotAlpha }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onDoubleClick={onDoubleClick}
+        onDragStart={(e) => e.preventDefault()}
         onDragOver={(e) => {
           if (e.dataTransfer.types.includes(DRAG_TYPE)) {
             e.preventDefault();
@@ -654,11 +674,28 @@ function CanvasEditor({ initial, focus }: { initial: CanvasDoc; focus?: string }
             </div>
           ))}
 
+          {single && singleRect && !dragging && (
+            <div
+              className="cv-plate"
+              style={{
+                left: singleRect.x - 10 / cam.z,
+                top: singleRect.y - 36 / cam.z,
+                width: singleRect.w + 20 / cam.z,
+                height: singleRect.h + 88 / cam.z,
+                borderRadius: 18 / cam.z,
+                borderWidth: 1 / cam.z,
+                boxShadow: `0 ${12 / cam.z}px ${32 / cam.z}px rgba(41, 31, 24, 0.12)`,
+              }}
+            />
+          )}
+
           <svg className="cv-edges" width="1" height="1">
             <defs>
-              <marker id="cv-end" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto">
-                <circle cx="5" cy="5" r="3.6" className="cv-end" />
-              </marker>
+              {INKS.map((ink) => (
+                <marker key={ink.name} id={markerId(ink.value)} viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto">
+                  <circle cx="5" cy="5" r="3.6" className="cv-end" style={{ stroke: ink.value ?? 'var(--ink-blue)' }} />
+                </marker>
+              ))}
             </defs>
             {Object.values(doc.edges).map((e) => {
               const a = rectOf(e.from);
@@ -668,7 +705,7 @@ function CanvasEditor({ initial, focus }: { initial: CanvasDoc; focus?: string }
               return (
                 <g key={e.id} data-edge-id={e.id} className={`cv-edge ${sel.has(e.id) ? 'is-selected' : ''}`}>
                   <path d={d} className="hit" />
-                  <path d={d} className="line" markerStart="url(#cv-end)" markerEnd="url(#cv-end)" style={{ strokeWidth: stroke }} />
+                  <path d={d} className="line" markerStart={`url(#${markerId(e.color)})`} markerEnd={`url(#${markerId(e.color)})`} style={{ strokeWidth: stroke, ['--edge-ink' as string]: e.color }} />
                 </g>
               );
             })}
@@ -707,7 +744,7 @@ function CanvasEditor({ initial, focus }: { initial: CanvasDoc; focus?: string }
             if (!a || !b || (!e.label && editingEdge !== e.id)) return null;
             const { mid } = edgePath(a, b, e.id);
             return (
-              <div key={e.id} className={`cv-edge-label ${sel.has(e.id) ? 'is-selected' : ''}`} data-edge-id={e.id} style={{ left: mid.x, top: mid.y, transform: `translate(-50%, -50%) scale(${Math.min(1.8, Math.max(1, 1 / cam.z))})` }}>
+              <div key={e.id} className={`cv-edge-label ${sel.has(e.id) ? 'is-selected' : ''}`} data-edge-id={e.id} style={{ left: mid.x, top: mid.y, transform: `translate(-50%, -50%) scale(${Math.min(1.8, Math.max(1, 1 / cam.z))})`, ['--edge-ink' as string]: e.color }}>
                 {editingEdge === e.id ? (
                   <input
                     autoFocus
@@ -764,18 +801,44 @@ function CanvasEditor({ initial, focus }: { initial: CanvasDoc; focus?: string }
           </div>
         )}
 
-        {single && singleRect && !gesture.current && (
+        {/* The selected thing grows a frame: its file name above, what you can do with it below. */}
+        {single && singleRect && !dragging && (
           <div
-            className="cv-selbar"
-            onPointerDown={(e) => e.stopPropagation()}
-            style={{ left: cam.x + (singleRect.x + singleRect.w / 2) * cam.z, top: cam.y + singleRect.y * cam.z - 12 }}
+            className={`cv-focus k-${single.kind}`}
+            style={{ left: cam.x + singleRect.x * cam.z - 10, top: cam.y + singleRect.y * cam.z - 36, width: singleRect.w * cam.z + 20, height: singleRect.h * cam.z + 36 + 52 }}
           >
-            {single.kind === 'card' && <button onClick={() => setDrawer(single.itemId)}>Open card</button>}
-            {single.kind === 'card' && <button onClick={() => setPanel('ideas')}>Ideas from this</button>}
-            {single.kind === 'note' && single.text.trim() && <button onClick={() => keepNoteInLibrary(single.id)}>Keep in library</button>}
-            <button onClick={removeSelection} title="Remove from canvas (the library keeps it)">Remove</button>
+            <div className="cv-focus-top" onPointerDown={(e) => e.stopPropagation()}>
+              <IconFile />
+              <span>{single.kind === 'card' ? fileNameOf(cardById.get(single.itemId)) : fileName(single.text || 'note', 'txt')}</span>
+            </div>
+            <div className="cv-focus-bottom" onPointerDown={(e) => e.stopPropagation()}>
+              {single.kind === 'card' ? (
+                <>
+                  <button onClick={() => setDrawer(single.itemId)} title="Open card"><IconOpen /><span>Open</span></button>
+                  <button onClick={() => setPanel('ideas')} title="Ideas from this"><IconIdeas /><span>Ideas</span></button>
+                </>
+              ) : (
+                <>
+                  <Inks value={single.color} onPick={recolour} />
+                  {single.text.trim() && <button onClick={() => keepNoteInLibrary(single.id)} title="Keep in library"><IconKeep /><span>Keep</span></button>}
+                </>
+              )}
+              <button onClick={removeSelection} title="Remove from canvas (the library keeps it)" aria-label="Remove"><IconTrash /></button>
+            </div>
           </div>
         )}
+        {singleEdge && !dragging && (() => {
+          const a = rectOf(singleEdge.from);
+          const b = rectOf(singleEdge.to);
+          if (!a || !b) return null;
+          const { mid } = edgePath(a, b, singleEdge.id);
+          return (
+            <div className="cv-inkbar" onPointerDown={(e) => e.stopPropagation()} style={{ left: cam.x + mid.x * cam.z, top: cam.y + mid.y * cam.z + 22 }}>
+              <Inks value={singleEdge.color} onPick={recolour} />
+              <button onClick={removeSelection} title="Remove this link" aria-label="Remove link"><IconTrash /></button>
+            </div>
+          );
+        })()}
       </div>
 
       {panel && (
@@ -861,4 +924,51 @@ function CanvasEditor({ initial, focus }: { initial: CanvasDoc; focus?: string }
       )}
     </div>
   );
+}
+
+// ── Ink: the colours notes and links can take ───────────────────────────────────────────────────
+
+/** `value` undefined is the canvas's default blue ink. */
+const INKS: { name: string; value?: string; swatch: string }[] = [
+  { name: 'Blue', swatch: '#2f6bd8' },
+  { name: 'Chocolate', value: '#3b2a20', swatch: '#3b2a20' },
+  { name: 'Rust', value: '#b4532a', swatch: '#b4532a' },
+  { name: 'Sage', value: '#6f7d4f', swatch: '#6f7d4f' },
+  { name: 'Plum', value: '#7a3b5e', swatch: '#7a3b5e' },
+  { name: 'Charcoal', value: '#2b2b2b', swatch: '#2b2b2b' },
+];
+const markerId = (color?: string) => (color ? `cv-end-${color.slice(1)}` : 'cv-end');
+
+function Inks({ value, onPick }: { value?: string; onPick: (color?: string) => void }) {
+  return (
+    <span className="cv-inks" role="radiogroup" aria-label="Ink colour">
+      {INKS.map((ink) => (
+        <button
+          key={ink.name}
+          role="radio"
+          aria-checked={value === ink.value}
+          aria-label={ink.name}
+          title={ink.name}
+          className={value === ink.value ? 'on' : ''}
+          style={{ background: ink.swatch }}
+          onClick={() => onPick(ink.value)}
+        />
+      ))}
+    </span>
+  );
+}
+
+// ── File names for the frame's tab ──────────────────────────────────────────────────────────────
+
+const EXT: Partial<Record<Card['type'], string>> = { image: 'png', article: 'html', link: 'url', book: 'epub', podcast: 'mp3', song: 'mp3', video: 'mp4' };
+
+function fileName(text: string, ext: string): string {
+  const slug = text.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 36).replace(/_+$/, '');
+  return `${slug || 'untitled'}.${ext}`;
+}
+
+function fileNameOf(card?: Card): string {
+  if (!card) return 'missing.txt';
+  const ext = card.cover?.match(/\.([a-z0-9]+)$/i)?.[1] ?? EXT[card.type] ?? 'txt';
+  return fileName(card.title, ext.toLowerCase());
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addCard, addEdge, addFrame, addNote, contains, emptyCanvas, exitPoint, history, placeAll, removeItems, setEdgeLabel, updateNode } from './model';
+import { addCard, addEdge, addFrame, addNote, contains, emptyCanvas, exitPoint, history, placeAll, removeItems, setEdgeLabel, setInk, updateNode } from './model';
 
 describe('canvas document', () => {
   it('places references, not copies — the same card can appear twice', () => {
@@ -83,5 +83,20 @@ describe('history', () => {
     h = history.undo(h);
     h = history.commit(h, addNote(h.present, 50, 50)[0]);
     expect(h.future).toHaveLength(0);
+  });
+
+  it('recolours notes and links, leaves cards alone, and resets to the default ink', () => {
+    let doc = emptyCanvas();
+    let card: string, note: string;
+    [doc, card] = addCard(doc, 'c01', 0, 0);
+    [doc, note] = addNote(doc, 400, 0, 'hello');
+    doc = addEdge(doc, card, note);
+    const edge = Object.keys(doc.edges)[0];
+    doc = setInk(doc, [card, note, edge], '#b4532a');
+    expect(doc.nodes[note]).toMatchObject({ color: '#b4532a' });
+    expect(doc.edges[edge].color).toBe('#b4532a');
+    expect(doc.nodes[card]).not.toHaveProperty('color');
+    doc = setInk(doc, [note], undefined);
+    expect(doc.nodes[note]).toMatchObject({ color: undefined });
   });
 });
