@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useLibrary } from '../data/store';
 import { href, navigate } from '../router';
 import { CardArt } from '../ui/CardArt';
@@ -7,6 +8,8 @@ export function CanvasList() {
   const canvases = useCanvasList();
   const cards = useLibrary();
   const byId = new Map(cards.map((c) => [c.id, c]));
+  // Asked inline rather than with confirm(), which some windows block outright.
+  const [deleting, setDeleting] = useState<string>();
 
   return (
     <main className="canvases">
@@ -40,15 +43,16 @@ export function CanvasList() {
                 <b>{c.title}</b>
                 <span>
                   {c.nodeCount} things · {Object.keys(doc?.edges ?? {}).length} links ·{' '}
-                  <button
-                    className="linkish"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (confirm(`Delete “${c.title}”? The cards stay in your library.`)) deleteCanvas(c.id);
-                    }}
-                  >
-                    delete
-                  </button>
+                  {deleting === c.id ? (
+                    <>
+                      delete it? the cards stay in your library.{' '}
+                      <button className="linkish" onClick={(e) => { e.preventDefault(); deleteCanvas(c.id); setDeleting(undefined); }}>yes</button>
+                      {' · '}
+                      <button className="linkish" onClick={(e) => { e.preventDefault(); setDeleting(undefined); }}>no</button>
+                    </>
+                  ) : (
+                    <button className="linkish" onClick={(e) => { e.preventDefault(); setDeleting(c.id); }}>delete</button>
+                  )}
                 </span>
               </div>
             </a>

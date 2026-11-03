@@ -876,6 +876,8 @@ function ActionPill({ card, collection, onToast }: { card: Card; collection: str
   const facts = useImageFacts(card);
   const borrowed = card.origin === 'borrowed' && card.pieceId;
   const plain = `${card.title}\n\n${bodyOf(card)}`;
+  // Asked inline rather than with confirm(), which some windows block outright.
+  const [asking, setAsking] = useState(false);
 
   const copy = async () => {
     try {
@@ -897,21 +899,26 @@ function ActionPill({ card, collection, onToast }: { card: Card; collection: str
     onToast('Saved');
   };
   const remove = () => {
-    if (borrowed) {
-      if (!confirm('Return this piece? It leaves your library and goes back out with what you added. No name goes with it.')) return;
-      handful.returnPiece(card.pieceId!);
-    } else {
-      if (!confirm(`Remove “${card.title}” from ${collection}? It stays in your library.`)) return;
-      library.setInCollection(card.id, collection, false);
-    }
+    if (borrowed) handful.returnPiece(card.pieceId!);
+    else library.setInCollection(card.id, collection, false);
     goCollection(collection);
   };
+
+  if (asking) {
+    return (
+      <div className="cl-pill is-asking" role="alertdialog" aria-label={borrowed ? 'Return this piece?' : 'Remove from collection?'}>
+        <span>{borrowed ? 'Return it? It leaves your library with what you added.' : `Remove from ${collection}? It stays in your library.`}</span>
+        <button className="is-yes" onClick={remove} autoFocus>{borrowed ? 'Return' : 'Remove'}</button>
+        <button onClick={() => setAsking(false)}>Cancel</button>
+      </div>
+    );
+  }
 
   return (
     <div className="cl-pill" role="toolbar" aria-label="Card actions">
       <button onClick={copy} title="Copy" aria-label="Copy"><IconCopy /></button>
       <button onClick={save} title="Save a copy" aria-label="Save a copy"><IconDownload /></button>
-      <button onClick={remove} title={borrowed ? 'Return' : 'Remove from collection'} aria-label={borrowed ? 'Return' : 'Remove from collection'}><IconTrash /></button>
+      <button onClick={() => setAsking(true)} title={borrowed ? 'Return' : 'Remove from collection'} aria-label={borrowed ? 'Return' : 'Remove from collection'}><IconTrash /></button>
     </div>
   );
 }
@@ -921,6 +928,7 @@ function ActionPill({ card, collection, onToast }: { card: Card; collection: str
 function ManageBar({ collection, picked, onDone, memberIds }: { collection: Collection; picked: Set<string>; onDone: () => void; memberIds: string[] }) {
   const [title, setTitle] = useState(collection.name);
   const [purpose, setPurpose] = useState(collection.purpose ?? '');
+  const [deleting, setDeleting] = useState(false);
   return (
     <div className="cl-manage" onKeyDown={(e) => e.stopPropagation()}>
       <input
@@ -948,16 +956,15 @@ function ManageBar({ collection, picked, onDone, memberIds }: { collection: Coll
       <button className="cl-text-btn" disabled={!memberIds.length} onClick={() => navigate(`/canvas/${createCanvasFromCollection(collection.name, memberIds).id}`)}>
         Open as canvas
       </button>
-      <button
-        className="cl-text-btn"
-        onClick={() => {
-          if (!confirm(`Delete “${collection.name}”? Its cards stay in your library.`)) return;
-          library.deleteCollection(collection.name);
-          goCollection(undefined);
-        }}
-      >
-        Delete
-      </button>
+      {deleting ? (
+        <span className="cl-ask" role="alertdialog" aria-label={`Delete ${collection.name}?`}>
+          Delete “{collection.name}”? Its cards stay in your library.
+          <button className="cl-text-btn" autoFocus onClick={() => { library.deleteCollection(collection.name); goCollection(undefined); }}>Yes, delete</button>
+          <button className="cl-text-btn" onClick={() => setDeleting(false)}>Cancel</button>
+        </span>
+      ) : (
+        <button className="cl-text-btn" onClick={() => setDeleting(true)}>Delete</button>
+      )}
     </div>
   );
 }

@@ -194,6 +194,11 @@
 }
 .cl-pill button { width: 32px; height: 28px; border: 0; border-radius: 8px; background: transparent; color: #fff; display: grid; place-items: center; cursor: pointer; }
 .cl-pill button:hover { background: rgba(255, 255, 255, 0.12); }
+.cl-pill.is-asking { width: auto; max-width: calc(100vw - 32px); gap: 4px; padding: 0 6px 0 16px; font: 400 12px/1.3 'Source Sans 3', system-ui, sans-serif; color: #fff; }
+.cl-pill.is-asking span { margin-right: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cl-pill.is-asking button { width: auto; padding: 0 10px; font: inherit; }
+.cl-pill.is-asking button.is-yes { background: rgba(255, 255, 255, 0.16); }
+.cl-ask { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 10px; font: 400 13px/1.4 'Source Sans 3', system-ui, sans-serif; }
 .cl-toast { position: fixed; left: 50%; bottom: 76px; transform: translateX(-50%); z-index: 4; color: var(--cl-ink); animation: cl-up 220ms ease both; }
 
 /* leaving a detail: everything but the hero/sheet goes first */
