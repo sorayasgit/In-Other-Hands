@@ -110,10 +110,10 @@ body:has(.is-home) { background: #291f18; }
 .is-text .pin-excerpt { margin-top: 16px; -webkit-line-clamp: 5; }
 .k-quote .pin-excerpt { font-style: italic; }
 
-.pin-actions { display: flex; gap: 14px; margin-top: 24px; }
+.pin-actions { display: flex; gap: 8px; margin-top: 20px; }
 .pin-btn {
-  flex: 1; display: inline-grid; place-items: center; min-height: 34px; padding: 4px 10px; border-radius: 6px; cursor: pointer;
-  font: 400 15px/1 var(--h-code); color: var(--h-navy); background: transparent; border: 1.5px solid var(--h-navy); white-space: nowrap;
+  display: inline-grid; place-items: center; min-height: 26px; padding: 3px 12px; border-radius: 5px; cursor: pointer;
+  font: 400 11px/1 var(--h-code); letter-spacing: 0.02em; color: var(--h-navy); background: transparent; border: 1px solid var(--h-navy); white-space: nowrap;
   transition: background 150ms ease, color 150ms ease;
 }
 .pin-btn:hover { background: rgba(39, 43, 77, 0.08); }

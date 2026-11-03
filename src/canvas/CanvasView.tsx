@@ -23,6 +23,8 @@ import {
   removeItems,
   setEdgeLabel,
   setInk,
+  stepNoteSize,
+  NOTE_SCALE,
   updateFrame,
   updateNode,
   type Camera,
@@ -369,7 +371,9 @@ function CanvasEditor({ initial, focus }: { initial: CanvasDoc; focus?: string }
   };
 
   const onDoubleClick = (e: React.MouseEvent) => {
-    const target = e.target as HTMLElement;
+    // The click lands on the board while it holds pointer capture, so look at what is under the pointer.
+    const target = (document.elementFromPoint(e.clientX, e.clientY) ?? e.target) as HTMLElement;
+    if (target.closest('.cv-focus-top, .cv-focus-bottom, .cv-inkbar')) return;
     const edgeEl = target.closest<HTMLElement | SVGElement>('[data-edge-id]');
     if (edgeEl) return setEditingEdge(edgeEl.dataset.edgeId);
     const frameEl = target.closest<HTMLElement>('[data-frame-id]');
@@ -575,8 +579,12 @@ function CanvasEditor({ initial, focus }: { initial: CanvasDoc; focus?: string }
 
   const single = sel.size === 1 ? doc.nodes[[...sel][0]] : undefined;
   const singleRect = single ? rectOf(single.id) : undefined;
+  // The frame is at least as wide as its tray, so the buttons never spill past it on a narrow note.
+  const trayW = !single ? 0 : single.kind === 'card' ? 240 : single.kind === 'note' && single.text.trim() ? 445 : 365;
+  const frameW = singleRect ? Math.max(singleRect.w * cam.z + 20, trayW) : 0;
   const singleEdge = sel.size === 1 ? doc.edges[[...sel][0]] : undefined;
   const recolour = (color?: string) => commit(setInk(doc, [...sel], color));
+  const resizeText = (steps: number) => commit(stepNoteSize(doc, [...sel], steps));
   const pct = Math.round(cam.z * 100);
 
   // Links are single soft arcs that start and end just outside each card (where a small open
@@ -680,7 +688,7 @@ function CanvasEditor({ initial, focus }: { initial: CanvasDoc; focus?: string }
               style={{
                 left: singleRect.x - 10 / cam.z,
                 top: singleRect.y - 36 / cam.z,
-                width: singleRect.w + 20 / cam.z,
+                width: frameW / cam.z,
                 height: singleRect.h + 88 / cam.z,
                 borderRadius: 18 / cam.z,
                 borderWidth: 1 / cam.z,
@@ -691,9 +699,10 @@ function CanvasEditor({ initial, focus }: { initial: CanvasDoc; focus?: string }
 
           <svg className="cv-edges" width="1" height="1">
             <defs>
-              {INKS.map((ink) => (
-                <marker key={ink.name} id={markerId(ink.value)} viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto">
-                  <circle cx="5" cy="5" r="3.6" className="cv-end" style={{ stroke: ink.value ?? 'var(--ink-blue)' }} />
+              {/* Every ink in the palette, plus any older ink a saved link still uses. */}
+              {[...new Set<string | undefined>([...INKS.map((ink) => ink.value), ...Object.values(doc.edges).map((e) => e.color)])].map((color) => (
+                <marker key={color ?? 'default'} id={markerId(color)} viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto">
+                  <circle cx="5" cy="5" r="3.6" className="cv-end" style={{ stroke: color ?? 'var(--ink-blue)' }} />
                 </marker>
               ))}
             </defs>
@@ -805,7 +814,7 @@ function CanvasEditor({ initial, focus }: { initial: CanvasDoc; focus?: string }
         {single && singleRect && !dragging && (
           <div
             className={`cv-focus k-${single.kind}`}
-            style={{ left: cam.x + singleRect.x * cam.z - 10, top: cam.y + singleRect.y * cam.z - 36, width: singleRect.w * cam.z + 20, height: singleRect.h * cam.z + 36 + 52 }}
+            style={{ left: cam.x + singleRect.x * cam.z - 10, top: cam.y + singleRect.y * cam.z - 36, width: frameW, height: singleRect.h * cam.z + 36 + 52 }}
           >
             <div className="cv-focus-top" onPointerDown={(e) => e.stopPropagation()}>
               <IconFile />
@@ -820,6 +829,7 @@ function CanvasEditor({ initial, focus }: { initial: CanvasDoc; focus?: string }
               ) : (
                 <>
                   <Inks value={single.color} onPick={recolour} />
+                  <TextSize value={single.scale ?? 1} onStep={resizeText} />
                   {single.text.trim() && <button onClick={() => keepNoteInLibrary(single.id)} title="Keep in library"><IconKeep /><span>Keep</span></button>}
                 </>
               )}
@@ -930,12 +940,16 @@ function CanvasEditor({ initial, focus }: { initial: CanvasDoc; focus?: string }
 
 /** `value` undefined is the canvas's default blue ink. */
 const INKS: { name: string; value?: string; swatch: string }[] = [
-  { name: 'Blue', swatch: '#2f6bd8' },
-  { name: 'Chocolate', value: '#3b2a20', swatch: '#3b2a20' },
-  { name: 'Rust', value: '#b4532a', swatch: '#b4532a' },
-  { name: 'Sage', value: '#6f7d4f', swatch: '#6f7d4f' },
-  { name: 'Plum', value: '#7a3b5e', swatch: '#7a3b5e' },
-  { name: 'Charcoal', value: '#2b2b2b', swatch: '#2b2b2b' },
+  { name: 'Slate', swatch: '#5c606c' },
+  { name: 'Ink', value: '#232323', swatch: '#232323' },
+  { name: 'Rose', value: '#be7f74', swatch: '#be7f74' },
+  { name: 'Mauve', value: '#795058', swatch: '#795058' },
+  { name: 'Olive', value: '#908f67', swatch: '#908f67' },
+  { name: 'Sand', value: '#eecc89', swatch: '#eecc89' },
+  { name: 'Navy', value: '#282d4b', swatch: '#282d4b' },
+  { name: 'Brick', value: '#842019', swatch: '#842019' },
+  { name: 'Copper', value: '#ba5f24', swatch: '#ba5f24' },
+  { name: 'Mist', value: '#d6d8d8', swatch: '#d6d8d8' },
 ];
 const markerId = (color?: string) => (color ? `cv-end-${color.slice(1)}` : 'cv-end');
 
@@ -954,6 +968,15 @@ function Inks({ value, onPick }: { value?: string; onPick: (color?: string) => v
           onClick={() => onPick(ink.value)}
         />
       ))}
+    </span>
+  );
+}
+
+function TextSize({ value, onStep }: { value: number; onStep: (steps: number) => void }) {
+  return (
+    <span className="cv-size" role="group" aria-label="Text size">
+      <button onClick={() => onStep(-1)} disabled={value <= NOTE_SCALE.min} title="Smaller text" aria-label="Smaller text" className="is-small">A</button>
+      <button onClick={() => onStep(1)} disabled={value >= NOTE_SCALE.max} title="Larger text" aria-label="Larger text" className="is-large">A</button>
     </span>
   );
 }

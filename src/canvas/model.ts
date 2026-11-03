@@ -149,6 +149,28 @@ export function setEdgeLabel(doc: CanvasDoc, id: string, label: string): CanvasD
   return touch(doc, { edges: { ...doc.edges, [id]: { ...e, label: label.trim() || undefined } } });
 }
 
+export const NOTE_SCALE = { min: 0.5, max: 4, step: 1.2 };
+
+/**
+ * Make notes' text larger (`steps` > 0) or smaller, growing the box with it so nothing is clipped.
+ * Anything other than a note among `ids` is left alone.
+ */
+export function stepNoteSize(doc: CanvasDoc, ids: string[], steps: number): CanvasDoc {
+  const nodes = { ...doc.nodes };
+  let changed = false;
+  for (const id of ids) {
+    const n = nodes[id];
+    if (n?.kind !== 'note') continue;
+    const from = n.scale ?? 1;
+    const to = Math.round(Math.min(NOTE_SCALE.max, Math.max(NOTE_SCALE.min, from * NOTE_SCALE.step ** steps)) * 100) / 100;
+    if (to === from) continue;
+    const k = to / from;
+    nodes[id] = { ...n, scale: to, w: Math.round(n.w * k), h: Math.round(n.h * k) };
+    changed = true;
+  }
+  return changed ? touch(doc, { nodes }) : doc;
+}
+
 /** Recolour notes and links (anything else among `ids` is left alone). Passing no colour resets to the default ink. */
 export function setInk(doc: CanvasDoc, ids: string[], color?: string): CanvasDoc {
   const nodes = { ...doc.nodes };

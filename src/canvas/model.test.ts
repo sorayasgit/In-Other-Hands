@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addCard, addEdge, addFrame, addNote, contains, emptyCanvas, exitPoint, history, placeAll, removeItems, setEdgeLabel, setInk, updateNode } from './model';
+import { addCard, addEdge, addFrame, addNote, contains, emptyCanvas, exitPoint, history, placeAll, removeItems, setEdgeLabel, setInk, stepNoteSize, updateNode } from './model';
 
 describe('canvas document', () => {
   it('places references, not copies — the same card can appear twice', () => {
@@ -98,5 +98,20 @@ describe('history', () => {
     expect(doc.nodes[card]).not.toHaveProperty('color');
     doc = setInk(doc, [note], undefined);
     expect(doc.nodes[note]).toMatchObject({ color: undefined });
+  });
+
+  it('steps note text size with the box, within limits, leaving cards alone', () => {
+    let doc = emptyCanvas();
+    let card: string, note: string;
+    [doc, card] = addCard(doc, 'c01', 0, 0);
+    [doc, note] = addNote(doc, 400, 0, 'hello');
+    const { w, h } = doc.nodes[note] as { w: number; h: number };
+    doc = stepNoteSize(doc, [card, note], 1);
+    expect(doc.nodes[note]).toMatchObject({ scale: 1.2, w: Math.round(w * 1.2), h: Math.round(h * 1.2) });
+    expect(doc.nodes[card]).toMatchObject({ scale: 1 });
+    for (let i = 0; i < 20; i++) doc = stepNoteSize(doc, [note], -1);
+    expect(doc.nodes[note]).toMatchObject({ scale: 0.5 });
+    const same = stepNoteSize(doc, [note], -1);
+    expect(same).toBe(doc);
   });
 });

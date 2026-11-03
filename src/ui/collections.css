@@ -270,7 +270,23 @@
 .is-home .cl-folder::after { display: none; }
 .is-home .cl-folder.cl-lift:hover { box-shadow: none; }
 .is-home .cl-folder-shape { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; fill: var(--folder); filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.3)); }
-.is-home .cl-folder > :not(.cl-folder-shape, .cl-folder-peek, .cl-open-chip) { position: relative; z-index: 2; }
+.is-home .cl-folder > :not(.cl-folder-shape, .cl-folder-peek, .cl-open-chip, .cl-folder-colors) { position: relative; z-index: 2; }
+.is-home .cl-folder-shape path { transition: fill 300ms ease; }
+.is-home .cl-folder.is-dark .cl-folder-kind { color: rgba(254, 249, 230, 0.7); }
+.is-home .cl-folder.is-dark .cl-folder-foot b { color: var(--h-cream); }
+.is-home .cl-folder.is-dark .cl-folder-visited { color: rgba(254, 249, 230, 0.62); }
+/* colour circles under the folder that is spread open */
+.is-home .cl-folder-colors {
+  position: absolute; left: 0; top: calc(100% + 18px); z-index: 3; width: calc(100% * 600 / 680);
+  display: grid; grid-template-columns: repeat(5, 18px); justify-content: space-between; row-gap: 10px; animation: cl-pop 260ms var(--cl-ease) both;
+}
+.is-home .cl-folder-colors button {
+  width: 18px; height: 18px; padding: 0; border: 0; border-radius: 50%; cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14); transition: transform 120ms ease;
+}
+.is-home .cl-folder-colors button:hover { transform: scale(1.15); }
+.is-home .cl-folder-colors button.on { box-shadow: 0 0 0 2px var(--h-bg), 0 0 0 3.5px var(--h-cream); }
+.is-home .cl-folder-colors button:focus-visible { outline: 2px solid var(--h-cream); outline-offset: 2px; }
 .is-home .cl-folder-peek { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
 .is-home .cl-folder-peek > span {
   position: absolute; left: 76%; width: 21%; height: 15%; overflow: hidden; border-radius: 4px;

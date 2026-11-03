@@ -67,6 +67,8 @@ function PiecePanel({ id, onClose, onReturned }: { id: string; onClose: () => vo
   const returned = handful.returnedToday(id);
   const pending = state.pending[id] ?? [];
   const [adding, setAdding] = useState(false);
+  // Asked inline rather than with confirm(), which some windows block outright.
+  const [confirming, setConfirming] = useState(false);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -77,8 +79,8 @@ function PiecePanel({ id, onClose, onReturned }: { id: string; onClose: () => vo
   if (!piece) return null;
 
   const doReturn = () => {
-    if (!confirm('Return this piece? It leaves your library and goes back out with what you added. No name goes with it.')) return;
     handful.returnPiece(id);
+    setConfirming(false);
     onReturned();
   };
 
@@ -97,11 +99,17 @@ function PiecePanel({ id, onClose, onReturned }: { id: string; onClose: () => vo
         <div className="actions">
           {returned ? (
             <span className="kicker">Passed along today.</span>
+          ) : held && confirming ? (
+            <>
+              <p className="return-ask">Return this piece? It leaves your library and goes back out with what you added. No name goes with it.</p>
+              <button className="btn primary" onClick={doReturn}>Return it</button>
+              <button className="btn" onClick={() => setConfirming(false)}>Keep holding</button>
+            </>
           ) : held ? (
             <>
               <span className="kept-mark">Kept ✓</span>
               {!adding && <button className="btn" onClick={() => setAdding(true)}>Add something</button>}
-              <button className="btn primary" onClick={doReturn}>Return</button>
+              <button className="btn primary" onClick={() => setConfirming(true)}>Return</button>
             </>
           ) : (
             <button className="btn primary" onClick={() => handful.keep(id)}>Keep</button>

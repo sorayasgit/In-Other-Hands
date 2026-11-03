@@ -11,6 +11,7 @@ import { Picture } from './Picture';
 import { formatBytes, IMAGE_RATIO, useImageFacts } from './collections/derive';
 import { clampX, clampY, FOLDER_W, loadPositions, placeFolders, savePositions, type Point } from './collections/positions';
 import { markVisited, visitedLabel } from './collections/visited';
+import { FOLDER_COLORS, isDark, loadFolderColors, saveFolderColor } from './collections/colors';
 import { boxOf, burst, fade, reducedMotion, retract, settle, slideAway, zoomIn, zoomOut, type Box } from './collections/motion';
 import './collections.css';
 
@@ -140,6 +141,7 @@ function Overview({ receded, hidden, preview, onPreview, onOpen }: {
   }, []);
   const [saved, setSaved] = useState(loadPositions);
   const [dragging, setDragging] = useState<{ name: string } & Point>();
+  const [colors, setColors] = useState(loadFolderColors);
   const grab = useRef<{ name: string; px: number; py: number; from: Point; moved: boolean }>();
   const swallowClick = useRef(false);
   const layout = useMemo(() => placeFolders(collections.map((c) => c.name), saved, width), [collections, saved, width]);
@@ -161,16 +163,17 @@ function Overview({ receded, hidden, preview, onPreview, onOpen }: {
           const at = dragging?.name === c.name ? dragging : layout.at.get(c.name)!;
           // First click spreads the contents out, a second puts them away; only "Open" opens.
           const toggle = () => onPreview(preview === c.name ? undefined : c.name);
+          const color = colors[c.name];
           return (
             <div
               key={c.name}
-              className={`cl-folder cl-lift ${previewing && active === c.name ? 'is-active' : ''} ${dragging?.name === c.name ? 'is-dragging' : ''}`}
+              className={`cl-folder cl-lift ${color && isDark(color) ? 'is-dark' : ''} ${previewing && active === c.name ? 'is-active' : ''} ${dragging?.name === c.name ? 'is-dragging' : ''}`}
               data-folder={c.name}
               role="button"
               tabIndex={0}
               aria-expanded={preview === c.name}
               aria-label={`${c.name}, ${members.length} ${members.length === 1 ? 'item' : 'items'}. Arrow keys move it.`}
-              style={{ left: at.x, top: at.y, visibility: hidden === c.name ? 'hidden' : undefined, animationDelay: `${Math.min(i, 10) * 30}ms` }}
+              style={{ left: at.x, top: at.y, visibility: hidden === c.name ? 'hidden' : undefined, animationDelay: `${Math.min(i, 10) * 30}ms`, ...(color && { '--folder': color }) } as CSSProperties}
               onClick={() => {
                 if (swallowClick.current) return void (swallowClick.current = false);
                 toggle();
@@ -232,6 +235,22 @@ function Overview({ receded, hidden, preview, onPreview, onOpen }: {
                 >
                   + Open
                 </button>
+              )}
+              {preview === c.name && !receded && (
+                <span className="cl-folder-colors" role="radiogroup" aria-label="Folder colour" onClick={(e) => e.stopPropagation()}>
+                  {FOLDER_COLORS.map((f) => (
+                    <button
+                      key={f.name}
+                      role="radio"
+                      aria-checked={color === f.value}
+                      aria-label={f.name}
+                      title={f.name}
+                      className={color === f.value ? 'on' : ''}
+                      style={{ background: f.swatch }}
+                      onClick={() => setColors(saveFolderColor(c.name, f.value))}
+                    />
+                  ))}
+                </span>
               )}
               <span className="cl-folder-foot">
                 <span className="cl-folder-kind">{topTag(members)}</span>

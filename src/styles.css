@@ -328,7 +328,9 @@ aside.drawer textarea {
   font: 400 14px/1.6 'Source Sans 3', 'Source Sans Pro', system-ui, sans-serif;
 }
 aside.drawer textarea:focus { outline: none; border-bottom-color: var(--ink-2); }
-aside.drawer .actions { gap: 8px; margin-top: 36px; }
+aside.drawer .actions { gap: 8px; margin-top: 36px; align-items: center; }
+aside.drawer .kept-mark { font: 400 12px/1 'Source Sans 3', system-ui, sans-serif; margin-right: 6px; }
+aside.drawer .return-ask { flex-basis: 100%; margin: 0 0 6px; font: 400 13px/1.55 'Source Sans 3', system-ui, sans-serif; color: #5c554e; }
 aside.drawer .actions .btn { font: 400 12px 'Source Sans 3', system-ui, sans-serif; padding: 6px 14px; }
 aside.drawer .chip { font: 400 12px 'Source Sans 3', system-ui, sans-serif; }
 aside.drawer :is(.mini .t, .mini-open .t) { font: 400 13px/1.3 'Source Sans 3', system-ui, sans-serif; }
