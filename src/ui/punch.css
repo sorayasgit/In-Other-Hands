@@ -104,3 +104,27 @@
   .ps { animation: none; }
   .ps-punch:active .ps-punch-dot { animation: none; }
 }
+
+/* a tool you switch on: a card with a small picture of what it does */
+.ps-tool {
+  display: flex; align-items: center; gap: 14px; width: 100%; padding: 12px 14px; border-radius: 12px; cursor: pointer; text-align: left;
+  border: 1px solid rgba(254, 249, 230, 0.25); background: rgba(254, 249, 230, 0.04); color: inherit;
+  transition: background 200ms ease, border-color 200ms ease;
+}
+.ps-tool:hover { background: rgba(254, 249, 230, 0.08); border-color: rgba(254, 249, 230, 0.5); }
+.ps-tool.is-on { border-color: #c5c9b0; background: rgba(197, 201, 176, 0.12); }
+.ps-tool b { display: block; font: 400 18px/1.2 'BenguiatProITC-Book', 'Benguiat Pro ITC', 'EB Garamond', serif; }
+.ps-tool small { display: block; margin-top: 3px; font: 400 14px/1.35 'EB Garamond', serif; color: rgba(254, 249, 230, 0.65); }
+.ps-tool-icon { flex: none; width: 44px; height: 55px; border-radius: 6px; object-fit: cover; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3); }
+.ps-tool.is-on .ps-tool-icon { box-shadow: 0 0 0 2px #c5c9b0; }
+
+/* the pixel ornaments to choose from */
+.ps-motifs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.ps-motifs button {
+  display: grid; place-items: center; aspect-ratio: 1.25; padding: 8px; border-radius: 8px; cursor: pointer;
+  border: 1px solid rgba(254, 249, 230, 0.18); background: rgba(254, 249, 230, 0.04); color: #fef9e6;
+  transition: background 150ms ease, border-color 150ms ease, transform 120ms ease;
+}
+.ps-motifs button:hover:not(:disabled) { background: rgba(254, 249, 230, 0.1); border-color: rgba(254, 249, 230, 0.55); }
+.ps-motifs button:active:not(:disabled) { transform: scale(0.96); }
+.ps-motifs svg { width: 100%; height: 100%; }

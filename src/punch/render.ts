@@ -1,12 +1,16 @@
+import { motif } from './motifs';
 import { punches } from './punch';
 
 /**
  * Draws a punched piece: the photo with holes cut through to a sheet of paper beside it, the cut
  * circles heaped on that paper, and any words laid over either half. The same drawing is used for
- * the live preview and for the saved picture.
+ * the live preview and for the saved picture. Pixel diagrams can be stamped on too: inked onto the
+ * photo, or cut out of it, the paper showing through and the cut pieces laid on the page beside it
+ * as if the two had been folded together.
  */
 
-export type Side = 'above' | 'below' | 'left' | 'right';
+/** Where the paper sits; 'none' is the photo on its own, with no hole punch. */
+export type Side = 'above' | 'below' | 'left' | 'right' | 'none';
 
 export interface Words {
   id: string;
@@ -20,6 +24,18 @@ export interface Words {
   size: number;
 }
 
+/** A pixel diagram placed on the photo. */
+export interface Stamp {
+  id: string;
+  motif: string;
+  /** Centre, as a share of the photo's width and height. */
+  x: number;
+  y: number;
+  /** Width as a share of the photo's width. */
+  size: number;
+  flip: boolean;
+}
+
 export interface Design {
   /** Where the paper sits, relative to the photo. */
   side: Side;
@@ -31,6 +47,10 @@ export interface Design {
   words: Words[];
   /** Film grain over the whole piece, 0 (none) to 1. */
   grain: number;
+  stamps: Stamp[];
+  /** 'ink' prints the pixels on the photo; 'cut' cuts them out, through to the paper. */
+  pixels: 'ink' | 'cut';
+  ink: string;
 }
 
 export interface Rect {
@@ -49,6 +69,11 @@ export interface Layout {
 
 /** The photo at a size where the whole piece is `long` pixels on its longer side; the paper matches it. */
 export function layout(iw: number, ih: number, side: Side, long: number): Layout {
+  if (side === 'none') {
+    const k = long / Math.max(iw, ih);
+    const photo = { x: 0, y: 0, w: Math.round(iw * k), h: Math.round(ih * k) };
+    return { width: photo.w, height: photo.h, photo, paper: { x: 0, y: 0, w: 0, h: 0 } };
+  }
   const across = side === 'left' || side === 'right';
   const k = long / Math.max(across ? iw * 2 : iw, across ? ih : ih * 2);
   const w = Math.round(iw * k);
@@ -85,6 +110,24 @@ function grainPattern(ctx: CanvasRenderingContext2D): CanvasPattern | null {
 
 const hash = (s: string) => [...s].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 16777619), 2166136261) >>> 0;
 
+/**
+ * A stamp's cells as one path, in the photo's own coordinates (its top left at 0, 0), each row's run
+ * of filled cells as a single rectangle so no seams show between them; and the box around it.
+ */
+export function stampPath(s: Stamp, P: Rect): { path: Path2D; box: Rect } {
+  const rows = motif(s.motif).rows;
+  const cols = rows[0].length;
+  const cell = (s.size * P.w) / cols;
+  const x0 = s.x * P.w - (cols * cell) / 2;
+  const y0 = s.y * P.h - (rows.length * cell) / 2;
+  const path = new Path2D();
+  rows.forEach((row, j) => {
+    const r = s.flip ? [...row].reverse().join('') : row;
+    for (const m of r.matchAll(/#+/g)) path.rect(x0 + m.index! * cell, y0 + j * cell - 0.25, m[0].length * cell, cell + 0.5);
+  });
+  return { path, box: { x: x0, y: y0, w: cols * cell, h: rows.length * cell } };
+}
+
 /** Draw the piece; returns where each piece of text ended up, for dragging it. */
 export function draw(ctx: CanvasRenderingContext2D, img: CanvasImageSource, iw: number, ih: number, d: Design, L: Layout, grow?: (i: number) => number): Map<string, Rect> {
   const { photo: P, paper: Q } = L;
@@ -97,12 +140,49 @@ export function draw(ctx: CanvasRenderingContext2D, img: CanvasImageSource, iw: 
 
   // a faint fold where the photo meets the paper
   ctx.fillStyle = 'rgba(0, 0, 0, 0.06)';
-  if (P.x === Q.x) ctx.fillRect(0, Math.max(P.y, Q.y) - 1, L.width, 2);
+  if (d.side === 'none') {
+    // no paper, no fold
+  } else if (P.x === Q.x) ctx.fillRect(0, Math.max(P.y, Q.y) - 1, L.width, 2);
   else ctx.fillRect(Math.max(P.x, Q.x) - 1, 0, 2, L.height);
+
+  const stamped = d.stamps.map((s) => ({ s, ...stampPath(s, P) }));
+  const boxes = new Map<string, Rect>();
+  for (const { s, path, box } of stamped) {
+    boxes.set(s.id, { x: P.x + box.x, y: P.y + box.y, w: box.w, h: box.h });
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(P.x, P.y, P.w, P.h);
+    ctx.clip();
+    ctx.translate(P.x, P.y);
+    ctx.fillStyle = d.pixels === 'cut' && d.side !== 'none' ? d.paper : d.ink;
+    ctx.fill(path);
+    ctx.restore();
+  }
+  if (d.pixels === 'cut' && d.side !== 'none') {
+    // The cut pieces on the page, where they'd land if the photo were folded shut over it: mirrored
+    // across the fold, the photo's own picture on each.
+    const across = P.y === Q.y;
+    for (const { path } of stamped) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(Q.x, Q.y, Q.w, Q.h);
+      ctx.clip();
+      if (across) ctx.setTransform(ctx.getTransform().translate(Q.x + Q.w, Q.y).scale(-1, 1));
+      else ctx.setTransform(ctx.getTransform().translate(Q.x, Q.y + Q.h).scale(1, -1));
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+      ctx.shadowBlur = Math.max(1, P.w * 0.004);
+      ctx.fillStyle = d.paper;
+      ctx.fill(path);
+      ctx.shadowColor = 'transparent';
+      ctx.clip(path);
+      ctx.drawImage(img, 0, 0, iw, ih, 0, 0, P.w, P.h);
+      ctx.restore();
+    }
+  }
 
   const r = d.radius * P.w;
   const sx = iw / P.w;
-  const list = punches(d.seed, d.count, d.radius, P.h / P.w, Q.h / Q.w);
+  const list = d.side === 'none' ? [] : punches(d.seed, d.count, d.radius, P.h / P.w, Q.h / Q.w);
 
   list.forEach((p, i) => {
     const t = grow ? grow(i) : 1;
@@ -151,10 +231,10 @@ export function draw(ctx: CanvasRenderingContext2D, img: CanvasImageSource, iw: 
     ctx.restore();
   });
 
-  const boxes = new Map<string, Rect>();
   for (const w of d.words) {
     if (!w.text.trim()) continue;
-    const R = w.on === 'photo' ? P : Q;
+    // with no paper, every word sits on the photo
+    const R = w.on === 'photo' || d.side === 'none' ? P : Q;
     const px = Math.max(10, w.size * R.w);
     const lines = w.text.split('\n');
     ctx.font = `400 ${px}px "EB Garamond", Georgia, serif`;
@@ -185,9 +265,9 @@ export function draw(ctx: CanvasRenderingContext2D, img: CanvasImageSource, iw: 
         ctx.fillText(l, cx, y + px * 0.04);
       });
     } else {
-      const light = w.on === 'photo' || isDark(d.paper);
-      ctx.fillStyle = light ? '#fffaf0' : '#241c16';
-      if (w.on === 'photo') {
+      const onPhoto = w.on === 'photo' || d.side === 'none';
+      ctx.fillStyle = onPhoto || isDark(d.paper) ? '#fffaf0' : '#241c16';
+      if (onPhoto) {
         ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
         ctx.shadowBlur = px * 0.3;
       }
