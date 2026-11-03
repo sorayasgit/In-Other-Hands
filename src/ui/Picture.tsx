@@ -1,4 +1,5 @@
 import { useEffect, useRef, type CSSProperties } from 'react';
+import { asset } from '../asset';
 
 export const isVideo = (src: string) => /\.(mp4|webm|mov|m4v)$/i.test(src);
 
@@ -23,7 +24,7 @@ export function Picture({ src, alt, className, style, lazy }: { src: string; alt
         ref={video}
         className={className}
         style={{ ...style, pointerEvents: 'none' }}
-        src={src}
+        src={asset(src)}
         aria-label={alt}
         autoPlay
         muted
@@ -36,5 +37,5 @@ export function Picture({ src, alt, className, style, lazy }: { src: string; alt
       />
     );
   }
-  return <img className={className} style={style} src={src} alt={alt} loading={lazy ? 'lazy' : undefined} />;
+  return <img className={className} style={style} src={asset(src)} alt={alt} loading={lazy ? 'lazy' : undefined} />;
 }

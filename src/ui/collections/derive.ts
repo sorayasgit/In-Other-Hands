@@ -1,5 +1,6 @@
 import { createElement, useEffect, useState } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { asset } from '../../asset';
 import type { Card } from '../../data/types';
 import { CardArt } from '../CardArt';
 import { isVideo } from '../Picture';
@@ -60,7 +61,7 @@ async function source(card: Card): Promise<{ el: CanvasImageSource; width: numbe
     const v = document.createElement('video');
     v.muted = true;
     v.preload = 'auto';
-    v.src = card.cover;
+    v.src = asset(card.cover);
     await new Promise<void>((res, rej) => {
       v.onloadeddata = () => res();
       v.onerror = () => rej(new Error('video failed'));
@@ -69,7 +70,7 @@ async function source(card: Card): Promise<{ el: CanvasImageSource; width: numbe
   }
   const img = new Image();
   if (card.cover) {
-    img.src = card.cover;
+    img.src = asset(card.cover);
   } else {
     const svg = renderToStaticMarkup(createElement(CardArt, { card, ratio: IMAGE_RATIO })).replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ');
     img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
@@ -81,7 +82,7 @@ async function source(card: Card): Promise<{ el: CanvasImageSource; width: numbe
 
 async function rasterize(card: Card): Promise<ImageFacts> {
   const { el: img, width, height } = await source(card);
-  const file = card.cover ? await fetch(card.cover).then((r) => r.blob()) : undefined;
+  const file = card.cover ? await fetch(asset(card.cover)).then((r) => r.blob()) : undefined;
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;

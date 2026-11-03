@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
+import { asset } from '../asset';
 import './home.css';
 
 /**
@@ -31,7 +32,7 @@ export function HomeHeader({ title, tabs, aside, about }: { title: string; tabs?
     <header className="home-head">
       <div className="home-bar">
         <a className="home-logo" href="#/today">
-          <img src="/brand/wordmark.png" alt="In Other Hands" width={1394} height={366} />
+          <img src={asset('/brand/wordmark.png')} alt="In Other Hands" width={1394} height={366} />
         </a>
         <nav className="home-links" aria-label="About">
           {link('purpose', 'Purpose')}

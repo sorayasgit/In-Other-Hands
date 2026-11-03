@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import { createPortal } from 'react-dom';
+import { asset } from '../asset';
 import { library } from '../data/store';
 import type { Card } from '../data/types';
 import { reencodeImage } from '../handful/image';
@@ -326,14 +327,14 @@ export function PunchStudio({ onClose, onSaved }: { onClose: () => void; onSaved
           <section className={photo ? '' : 'is-off'}>
             <h3>Tools</h3>
             <button className={`ps-tool ${punch ? 'is-on' : ''}`} aria-pressed={punch} onClick={() => toggle('punch')}>
-              <img className="ps-tool-icon" src="/tools/hole-punch.jpg" alt="" />
+              <img className="ps-tool-icon" src={asset('/tools/hole-punch.jpg')} alt="" />
               <span>
                 <b>Hole punch</b>
                 <small>{punch ? 'On. Lay paper beside the photo and punch through it.' : 'Lay paper beside the photo and punch holes through it.'}</small>
               </span>
             </button>
             <button className={`ps-tool ${pixelsOn ? 'is-on' : ''}`} aria-pressed={pixelsOn} onClick={() => toggle('pixels')}>
-              <img className="ps-tool-icon" src="/tools/pixels.png" alt="" />
+              <img className="ps-tool-icon" src={asset('/tools/pixels.png')} alt="" />
               <span>
                 <b>Pixels</b>
                 <small>{pixelsOn ? 'On. Stamp pixel ornaments on the photo, or cut them out.' : 'Stamp pixel ornaments on the photo, or cut them out onto a page.'}</small>
