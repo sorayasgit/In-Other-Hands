@@ -8,6 +8,7 @@ import { ABOUT_PAGES, AboutView, type AboutPage } from './ui/AboutView';
 import { CollectionsSpace } from './ui/CollectionsView';
 import { LibraryView } from './ui/LibraryView';
 import { HomeHeader } from './ui/HomeHeader';
+import { ScrollThumb } from './ui/ScrollThumb';
 import { TodayView } from './ui/TodayView';
 
 export function App() {
@@ -70,6 +71,7 @@ export function App() {
   if (!onAbout) lastPage.current = route;
   return (
     <>
+      <ScrollThumb />
       <div className={onAbout ? 'about-under' : undefined} style={{ display: 'contents' }} aria-hidden={onAbout || undefined} {...(onAbout ? { inert: '' } : {})}>
         <Page route={lastPage.current} />
       </div>

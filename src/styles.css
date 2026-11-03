@@ -345,3 +345,15 @@ aside.drawer .drawer-delete-btn { color: #842019; border-color: rgba(132, 32, 25
 aside.drawer .drawer-delete-btn:hover { background: rgba(132, 32, 25, 0.06); border-color: #842019; }
 aside.drawer .btn.danger { background: #842019; border-color: #842019; color: #fff; }
 aside.drawer .btn.danger:hover { background: #6e1a14; }
+
+/* The browser's own scroll bars are hidden on the page and the about sheets, so they never take up
+   width; ScrollThumb draws a slim one over the edge instead. */
+html, .is-about { scrollbar-width: none; }
+html::-webkit-scrollbar, .is-about::-webkit-scrollbar { display: none; }
+.scroll-thumb {
+  position: fixed; top: 0; right: 3px; z-index: 60; width: 6px; border-radius: 999px; cursor: default;
+  background: rgba(128, 118, 108, 0.55); box-shadow: 0 0 0 1px rgba(255, 250, 240, 0.18);
+  opacity: 0; pointer-events: none; transition: opacity 400ms ease, width 150ms ease;
+}
+.scroll-thumb.is-on { opacity: 1; pointer-events: auto; transition: opacity 120ms ease, width 150ms ease; }
+.scroll-thumb.is-on:hover, .scroll-thumb.is-dragging { width: 8px; background: rgba(128, 118, 108, 0.8); }
