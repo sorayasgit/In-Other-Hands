@@ -51,27 +51,38 @@ export const CanvasCard = memo(function CanvasCard({ node, card, selected, lod, 
     );
   }
 
-  return (
-    <div ref={ref} className={`cv-node cv-card t-${card.type} ${selected ? 'is-selected' : ''}`} data-node-id={node.id} style={style}>
-      {card.type === 'image' && (
+  // Images sit bare on the canvas with a small caption above, like a pinned print; quotes are just
+  // set type; everything else is a light paper slip.
+  if (card.type === 'image') {
+    return (
+      <div ref={ref} className={`cv-node cv-card cv-print ${node.scale < 0.75 ? 'is-bare' : ''} ${selected ? 'is-selected' : ''}`} data-node-id={node.id} style={style}>
+        <div className="cv-cap">
+          <b>{card.title}</b>
+          <span>{byline(card)}</span>
+        </div>
         <div className="cv-art">
           <CardArt card={card} />
         </div>
-      )}
-      <div className="cv-card-body">
-        <div className="kicker">{byline(card)}</div>
-        {card.quote ? (
-          <>
-            <p className="cv-quote">“{card.quote}”</p>
-            <div className="cv-sub">{card.title}</div>
-          </>
-        ) : (
-          <>
-            <h4>{card.title}</h4>
-            {card.type !== 'image' && <p className="cv-text">{card.description ?? card.body ?? card.note}</p>}
-          </>
-        )}
       </div>
+    );
+  }
+
+  if (card.quote) {
+    return (
+      <div ref={ref} className={`cv-node cv-card cv-type ${selected ? 'is-selected' : ''}`} data-node-id={node.id} style={style}>
+        <p className="cv-quote">“{card.quote}”</p>
+        <div className="cv-sub">{card.source?.author ?? card.title}</div>
+      </div>
+    );
+  }
+
+  return (
+    <div ref={ref} className={`cv-node cv-card cv-slip t-${card.type} ${selected ? 'is-selected' : ''}`} data-node-id={node.id} style={style}>
+      <div className="cv-cap">
+        <b>{card.title}</b>
+        <span>{byline(card)}</span>
+      </div>
+      <p className="cv-text">{card.description ?? card.body ?? card.note}</p>
     </div>
   );
 });
@@ -88,7 +99,7 @@ interface NoteProps {
 export const CanvasNote = memo(function CanvasNote({ node, selected, editing, onChange, onDone }: NoteProps) {
   return (
     <div
-      className={`cv-node cv-note ${selected ? 'is-selected' : ''} ${editing ? 'is-editing' : ''}`}
+      className={`cv-node cv-note s-${node.style ?? 'text'} ${selected ? 'is-selected' : ''} ${editing ? 'is-editing' : ''}`}
       data-node-id={node.id}
       style={{ left: node.x, top: node.y, width: node.w, height: node.h }}
     >

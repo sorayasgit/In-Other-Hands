@@ -72,9 +72,10 @@ export const library = {
     listeners.add(l);
     return () => listeners.delete(l);
   },
-  add(card: Omit<Card, 'id' | 'savedAt'>): Card {
-    const full: Card = { ...card, id: `u${Date.now().toString(36)}`, savedAt: new Date().toISOString() };
-    commit({ ...state, added: [...state.added, full] });
+  /** `opts` lets a borrowed card carry a stable id and a day-level date instead of a timestamp. */
+  add(card: Omit<Card, 'id' | 'savedAt'>, opts: { id?: string; savedAt?: string } = {}): Card {
+    const full: Card = { ...card, id: opts.id ?? `u${Date.now().toString(36)}`, savedAt: opts.savedAt ?? new Date().toISOString() };
+    commit({ ...state, added: [...state.added.filter((c) => c.id !== full.id), full], removed: state.removed.filter((r) => r !== full.id) });
     return full;
   },
   update(id: string, patch: Partial<Card>) {

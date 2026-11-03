@@ -8,7 +8,9 @@ A quiet library of things you've kept, with two tools on top:
   group, link, and let the library suggest what else belongs.
 
 Everything runs on your machine. The search model (bge-small, ~33 MB) downloads once from Hugging
-Face's CDN and is cached by the browser; no card text or query leaves the device.
+Face's CDN and is cached by the browser; no card text or query leaves the device. **Return** (in
+Today's handful) is the one action that sends anything out, and for now it is simulated locally: the
+returned piece goes to a local outbox, not a server.
 
 ## Run it
 
@@ -17,9 +19,27 @@ Needs Node ≥ 20.19 (developed on Node 24).
 ```bash
 npm install
 npm run dev        # http://localhost:5173
-npm test           # 34 tests: real-model search scenarios, collections, canvas model
+npm test           # 39 tests: search scenarios, collections, canvas model, today's handful
 npm run embed      # rebuild src/data/library-vectors.json after editing library.json
 ```
+
+## Today's handful
+
+The landing page. Every day, twenty pieces from other people (a book, a note, a quote, a song, a
+recipe, a photo), chosen by a shuffle seeded with the date: the same all day, different tomorrow,
+and finite. No feed, no scrolling past the end.
+
+- **Keep** copies a piece into your library as a *borrowed* card: searchable, placeable on canvases,
+  fileable in collections.
+- **Add something** (once kept): a note, an image, a song. Images are re-encoded to an 800 px JPEG,
+  which strips camera and location data; the original file and its name are never kept.
+- **Return** sends the piece back out with your additions and one more hand on its count, and
+  removes it from your library, canvases and collections. Tomorrow's handful includes it.
+- Everyone is anonymous: pieces and trails hold no names, ids of people, or times finer than a day
+  (a test enforces the allowed keys).
+- Demo helpers: `?day=1` shows tomorrow's handful (`?day=0` returns to today); `?reset=1` clears the
+  handful's state only, not your library.
+- Photo pieces use placeholder SVGs in `public/handful/`; drop in a real image with the same filename.
 
 ## Try these
 

@@ -5,6 +5,7 @@ import { engine, useSearchService } from '../search/searchService';
 import { CardDrawer } from '../ui/CardDrawer';
 import { CanvasCard, CanvasNote } from './CanvasNodes';
 import { CanvasSidebar, DRAG_TYPE } from './CanvasSidebar';
+import { IconFit, IconGroup, IconIdeas, IconLibrary, IconLinks, IconMap, IconNote, IconRedo, IconUndo } from './icons';
 import { Minimap } from './Minimap';
 import {
   addCard,
@@ -77,6 +78,7 @@ function CanvasEditor({ initial, focus }: { initial: CanvasDoc; focus?: string }
   const [editingFrame, setEditingFrame] = useState<string>();
   const [panel, setPanel] = useState<'library' | 'ideas' | undefined>();
   const [possible, setPossible] = useState(false);
+  const [showMap, setShowMap] = useState(true);
   const [drawer, setDrawer] = useState<string>();
   const [toast, setToast] = useState<Toast>();
   const [find, setFind] = useState<{ q: string; i: number }>();
@@ -563,17 +565,37 @@ function CanvasEditor({ initial, focus }: { initial: CanvasDoc; focus?: string }
   const singleRect = single ? rectOf(single.id) : undefined;
   const pct = Math.round(cam.z * 100);
 
-  const edgePath = (a: Rect, b: Rect) => {
-    const p = exitPoint(a, b);
-    const q = exitPoint(b, a);
-    const mx = (p.x + q.x) / 2;
-    const my = (p.y + q.y) / 2;
-    const len = Math.hypot(q.x - p.x, q.y - p.y) || 1;
-    const bend = Math.min(40, len * 0.08);
-    const cx = mx - ((q.y - p.y) / len) * bend;
-    const cy = my + ((q.x - p.x) / len) * bend;
-    return { d: `M${p.x},${p.y} Q${cx},${cy} ${q.x},${q.y}`, mid: { x: (p.x + 2 * cx + q.x) / 4, y: (p.y + 2 * cy + q.y) / 4 } };
+  // Links are single soft arcs that start and end just outside each card (where a small open
+  // circle sits). The bow's side and depth vary per link, so lines from one hub fan out freely
+  // instead of bundling.
+  const edgePath = (a: Rect, b: Rect, seed = '') => {
+    const ca = { x: a.x + a.w / 2, y: a.y + a.h / 2 };
+    const cb = { x: b.x + b.w / 2, y: b.y + b.h / 2 };
+    const gap = 9 / Math.min(1, cam.z);
+    const out = (r: Rect, from: { x: number; y: number }, to: Rect) => {
+      const e = exitPoint(r, to);
+      const len = Math.hypot(e.x - from.x, e.y - from.y) || 1;
+      return r.w || r.h ? { x: e.x + ((e.x - from.x) / len) * gap, y: e.y + ((e.y - from.y) / len) * gap } : e;
+    };
+    const p = out(a, ca, b);
+    const q = out(b, cb, a);
+    const dx = q.x - p.x;
+    const dy = q.y - p.y;
+    const len = Math.hypot(dx, dy) || 1;
+    let h = 0;
+    for (const ch of seed) h = (h * 31 + ch.charCodeAt(0)) | 0;
+    const side = h & 1 ? 1 : -1;
+    const bow = side * Math.min(140, len * (0.12 + ((h >>> 1) % 9) / 100));
+    const nx = (-dy / len) * bow;
+    const ny = (dx / len) * bow;
+    const c1 = { x: p.x + dx * 0.3 + nx, y: p.y + dy * 0.3 + ny };
+    const c2 = { x: p.x + dx * 0.7 + nx, y: p.y + dy * 0.7 + ny };
+    return {
+      d: `M${p.x},${p.y} C${c1.x},${c1.y} ${c2.x},${c2.y} ${q.x},${q.y}`,
+      mid: { x: (p.x + 3 * c1.x + 3 * c2.x + q.x) / 8, y: (p.y + 3 * c1.y + 3 * c2.y + q.y) / 8 },
+    };
   };
+  const stroke = 1.25 / Math.min(1, cam.z);
 
   return (
     <div className="cv-root">
@@ -593,7 +615,7 @@ function CanvasEditor({ initial, focus }: { initial: CanvasDoc; focus?: string }
       <div
         ref={rootRef}
         className="cv-stage"
-        style={{ backgroundPosition: `${cam.x}px ${cam.y}px`, backgroundSize: `${28 * cam.z}px ${28 * cam.z}px` }}
+        style={{ backgroundPosition: `${cam.x}px ${cam.y}px`, backgroundSize: `${120 * cam.z}px ${120 * cam.z}px` }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
@@ -614,8 +636,8 @@ function CanvasEditor({ initial, focus }: { initial: CanvasDoc; focus?: string }
       >
         <div className="cv-world" style={{ transform: `translate(${cam.x}px, ${cam.y}px) scale(${cam.z})` }}>
           {Object.values(doc.frames).map((f) => (
-            <div key={f.id} className={`cv-frame ${sel.has(f.id) ? 'is-selected' : ''}`} style={{ left: f.x, top: f.y, width: f.w, height: f.h }}>
-              <div className="cv-frame-title" data-frame-id={f.id} style={{ fontSize: Math.max(13, 13 / cam.z) }}>
+            <div key={f.id} className={`cv-frame ${f.tone === 'ink' ? 'is-ink' : ''} ${sel.has(f.id) ? 'is-selected' : ''}`} style={{ left: f.x, top: f.y, width: f.w, height: f.h }}>
+              <div className="cv-frame-title" data-frame-id={f.id} style={{ fontSize: Math.max(15, 13 / cam.z) }}>
                 {editingFrame === f.id ? (
                   <input
                     autoFocus
@@ -633,25 +655,30 @@ function CanvasEditor({ initial, focus }: { initial: CanvasDoc; focus?: string }
           ))}
 
           <svg className="cv-edges" width="1" height="1">
+            <defs>
+              <marker id="cv-end" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto">
+                <circle cx="5" cy="5" r="3.6" className="cv-end" />
+              </marker>
+            </defs>
             {Object.values(doc.edges).map((e) => {
               const a = rectOf(e.from);
               const b = rectOf(e.to);
               if (!a || !b) return null;
-              const { d } = edgePath(a, b);
+              const { d } = edgePath(a, b, e.id);
               return (
                 <g key={e.id} data-edge-id={e.id} className={`cv-edge ${sel.has(e.id) ? 'is-selected' : ''}`}>
                   <path d={d} className="hit" />
-                  <path d={d} className="line" style={{ strokeWidth: 1.5 / Math.min(1, cam.z) }} />
+                  <path d={d} className="line" markerStart="url(#cv-end)" markerEnd="url(#cv-end)" style={{ strokeWidth: stroke }} />
                 </g>
               );
             })}
             {suggestions.map((s) => {
               const a = rectOf(s.from);
               const b = rectOf(s.to);
-              return a && b ? <path key={`${s.from}-${s.to}`} d={edgePath(a, b).d} className="cv-edge-suggest" style={{ strokeWidth: 1.5 / Math.min(1, cam.z) }} /> : null;
+              return a && b ? <path key={`${s.from}-${s.to}`} d={edgePath(a, b, `${s.from}${s.to}`).d} className="cv-edge-suggest" markerStart="url(#cv-end)" markerEnd="url(#cv-end)" style={{ strokeWidth: stroke }} /> : null;
             })}
             {linkPreview && rectOf(linkPreview.from) && (
-              <path d={`M${rectOf(linkPreview.from)!.x + rectOf(linkPreview.from)!.w},${rectOf(linkPreview.from)!.y + rectOf(linkPreview.from)!.h / 2} L${linkPreview.x},${linkPreview.y}`} className="cv-edge-preview" />
+              <path d={edgePath(rectOf(linkPreview.from)!, { x: linkPreview.x, y: linkPreview.y, w: 0, h: 0 }).d} className="cv-edge-preview" markerStart="url(#cv-end)" style={{ strokeWidth: stroke }} />
             )}
           </svg>
 
@@ -678,7 +705,7 @@ function CanvasEditor({ initial, focus }: { initial: CanvasDoc; focus?: string }
             const a = rectOf(e.from);
             const b = rectOf(e.to);
             if (!a || !b || (!e.label && editingEdge !== e.id)) return null;
-            const { mid } = edgePath(a, b);
+            const { mid } = edgePath(a, b, e.id);
             return (
               <div key={e.id} className={`cv-edge-label ${sel.has(e.id) ? 'is-selected' : ''}`} data-edge-id={e.id} style={{ left: mid.x, top: mid.y, transform: `translate(-50%, -50%) scale(${Math.min(1.8, Math.max(1, 1 / cam.z))})` }}>
                 {editingEdge === e.id ? (
@@ -701,7 +728,7 @@ function CanvasEditor({ initial, focus }: { initial: CanvasDoc; focus?: string }
             const a = rectOf(s.from);
             const b = rectOf(s.to);
             if (!a || !b) return null;
-            const { mid } = edgePath(a, b);
+            const { mid } = edgePath(a, b, `${s.from}${s.to}`);
             return (
               <button
                 key={`${s.from}-${s.to}`}
@@ -781,31 +808,38 @@ function CanvasEditor({ initial, focus }: { initial: CanvasDoc; focus?: string }
         </div>
       )}
 
-      <nav className="cv-toolbar" onPointerDown={(e) => e.stopPropagation()} aria-label="Canvas tools">
-        <button className={panel === 'library' ? 'on' : ''} onClick={() => setPanel(panel === 'library' ? undefined : 'library')} title="Library (L)">Library</button>
-        <button className={panel === 'ideas' ? 'on' : ''} onClick={() => setPanel(panel === 'ideas' ? undefined : 'ideas')} title="Suggestions (I)">Ideas</button>
-        <span className="sep" />
-        <button onClick={() => { const [next, nid] = addNote(doc, viewport.x + viewport.w / 2 - 110, viewport.y + viewport.h / 2 - 70); commit(next); setSel(new Set([nid])); setEditingNote(nid); }} title="New note (N, or double-click)">Note</button>
-        <button onClick={groupSelection} disabled={![...sel].some((s) => doc.nodes[s])} title="Group selection (G)">Group</button>
-        <button className={possible ? 'on' : ''} onClick={() => setPossible((p) => !p)} title="Show connections you might not have noticed">Possible links</button>
-        <span className="sep" />
+      <nav className="cv-rail" onPointerDown={(e) => e.stopPropagation()} aria-label="Canvas tools">
+        <div className="cv-rail-group">
+          <button className={panel === 'library' ? 'on' : ''} onClick={() => setPanel(panel === 'library' ? undefined : 'library')} title="Library (L)" aria-label="Library"><IconLibrary /></button>
+          <button className={panel === 'ideas' ? 'on' : ''} onClick={() => setPanel(panel === 'ideas' ? undefined : 'ideas')} title="Ideas (I)" aria-label="Ideas"><IconIdeas /></button>
+          <button onClick={() => { const [next, nid] = addNote(doc, viewport.x + viewport.w / 2 - 110, viewport.y + viewport.h / 2 - 70); commit(next); setSel(new Set([nid])); setEditingNote(nid); }} title="New note (N, or double-click)" aria-label="New note"><IconNote /></button>
+          <button onClick={groupSelection} disabled={![...sel].some((s) => doc.nodes[s])} title="Group selection (G)" aria-label="Group selection"><IconGroup /></button>
+          <button className={possible ? 'on' : ''} onClick={() => setPossible((p) => !p)} title="Possible links: connections you might not have noticed" aria-label="Possible links" aria-pressed={possible}><IconLinks /></button>
+        </div>
+        <div className="cv-rail-group">
+          <button onClick={() => setHist((h) => history.undo(h))} disabled={!hist.past.length} title="Undo (⌘Z)" aria-label="Undo"><IconUndo /></button>
+          <button onClick={() => setHist((h) => history.redo(h))} disabled={!hist.future.length} title="Redo (⇧⌘Z)" aria-label="Redo"><IconRedo /></button>
+        </div>
+      </nav>
+
+      <div className="cv-zoom" onPointerDown={(e) => e.stopPropagation()}>
+        <button className={showMap ? 'on' : ''} onClick={() => setShowMap((m) => !m)} title="Minimap" aria-label="Toggle minimap" aria-pressed={showMap}><IconMap /></button>
         <button onClick={() => zoomAt(1 / 1.2)} aria-label="Zoom out">−</button>
         <button onClick={() => setCam((c) => ({ z: 1, x: size.w / 2 - (size.w / 2 - c.x) / c.z, y: size.h / 2 - (size.h / 2 - c.y) / c.z }))} title="Actual size (0)" className="pct">{pct}%</button>
         <button onClick={() => zoomAt(1.2)} aria-label="Zoom in">+</button>
-        <button onClick={fitAll} title="Fit everything (⇧1)">Fit</button>
-        <span className="sep" />
-        <button onClick={() => setHist((h) => history.undo(h))} disabled={!hist.past.length} title="Undo (⌘Z)" aria-label="Undo">↶</button>
-        <button onClick={() => setHist((h) => history.redo(h))} disabled={!hist.future.length} title="Redo (⇧⌘Z)" aria-label="Redo">↷</button>
-      </nav>
+        <button onClick={fitAll} title="Fit everything (⇧1)" aria-label="Fit everything"><IconFit /></button>
+      </div>
 
-      <Minimap
-        rects={[
-          ...Object.values(doc.frames).map((f) => ({ id: f.id, rect: { x: f.x, y: f.y, w: f.w, h: f.h }, kind: 'frame' as const })),
-          ...Object.values(doc.nodes).map((n) => ({ id: n.id, rect: rectOf(n.id)!, kind: n.kind })),
-        ]}
-        viewport={viewport}
-        onTravel={(x, y) => setCam((c) => ({ ...c, x: size.w / 2 - x * c.z, y: size.h / 2 - y * c.z }))}
-      />
+      {showMap && (
+        <Minimap
+          rects={[
+            ...Object.values(doc.frames).map((f) => ({ id: f.id, rect: { x: f.x, y: f.y, w: f.w, h: f.h }, kind: 'frame' as const })),
+            ...Object.values(doc.nodes).map((n) => ({ id: n.id, rect: rectOf(n.id)!, kind: n.kind })),
+          ]}
+          viewport={viewport}
+          onTravel={(x, y) => setCam((c) => ({ ...c, x: size.w / 2 - x * c.z, y: size.h / 2 - y * c.z }))}
+        />
+      )}
 
       {toast && (
         <div className="toast" role="status">

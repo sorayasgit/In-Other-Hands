@@ -28,6 +28,7 @@ export const SAMPLE_PURPOSES: Record<string, string> = {
   'Reading list': 'Pieces to read properly on a slow Sunday.',
   Listening: 'Episodes worth a second listen on a long walk.',
   Colour: 'Palette references for packaging and print.',
+  'Fold space': 'Research for the folding-furniture installation.',
 };
 
 export function deriveCollections(cards: Card[], meta: Record<string, CollectionMeta>): Collection[] {

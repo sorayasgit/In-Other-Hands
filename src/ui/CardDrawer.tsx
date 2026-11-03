@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { library, useCard, useCollections, useLibrary } from '../data/store';
-import { collectionHref, navigate } from '../router';
+import { collectionHref, href, navigate } from '../router';
 import { engine, useSearchService } from '../search/searchService';
 import { createCanvas, placeOnCanvas, useCanvasList } from '../canvas/store';
 import { CardArt, CardThumb } from './CardArt';
@@ -63,13 +63,19 @@ export function CardDrawer({ id, onClose, onOpen, onMoreLike, onSameTime, onPlac
 
         <h1>{card.title}</h1>
         {card.source?.name && card.source.name !== card.source.author && <div className="byline">{card.source.name}</div>}
+        {card.origin === 'borrowed' && card.pieceId && (
+          <div className="byline">
+            Borrowed from today’s handful · {card.hands ?? 1} {card.hands === 1 ? 'hand' : 'hands'} before yours · <a href={href('/today', { piece: card.pieceId })}>open the piece</a>
+          </div>
+        )}
 
         {card.type === 'image' && (
           <>
-            <div className="art" style={{ aspectRatio: '4 / 3' }}><CardArt card={card} /></div>
+            <div className="art" style={{ aspectRatio: card.cover ? undefined : '4 / 3' }}><CardArt card={card} /></div>
             {card.palette && <div className="palette" aria-label="Palette">{card.palette.map((c) => <span key={c} style={{ background: c }} title={c} />)}</div>}
           </>
         )}
+        {card.type !== 'image' && card.cover && <img className="drawer-cover" src={card.cover} alt={`Cover of ${card.title}`} />}
         {card.quote && <blockquote className="big-quote">“{card.quote}”</blockquote>}
         {card.description && <p className="prose">{card.description}</p>}
         {card.body && <p className="prose">{card.body}</p>}

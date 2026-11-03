@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { seededShuffle } from '../data/shuffle';
 import { useLibrary } from '../data/store';
 import type { Card } from '../data/types';
 import { navigate, type Route } from '../router';
@@ -37,7 +38,7 @@ export function LibraryView({ route }: { route: Route }) {
 
   const set = (patch: Partial<Record<'q' | 'r' | 'x' | 'like' | 'wander' | 'open', string | undefined>>, replace = false) => {
     const next = { q: s.q || undefined, r: s.refinements.join('|') || undefined, x: s.ignored.join(',') || undefined, like: s.like, wander: s.wander, open: s.open, ...patch };
-    navigate('/', next, { replace });
+    navigate('/library', next, { replace });
   };
 
   // Keep the field in sync when the URL changes from outside (back button, example click).
@@ -75,14 +76,7 @@ export function LibraryView({ route }: { route: Route }) {
     const byDate = [...cards].sort((a, b) => Date.parse(b.savedAt) - Date.parse(a.savedAt));
     if (!s.wander) return byDate;
     // A seeded shuffle: the same wander link always shows the same order.
-    let h = Number(s.wander) || 1;
-    return byDate
-      .map((c) => {
-        h = (h * 1103515245 + 12345) & 0x7fffffff;
-        return [h, c] as const;
-      })
-      .sort((a, b) => a[0] - b[0])
-      .map(([, c]) => c);
+    return seededShuffle(byDate, Number(s.wander) || 1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cards, s.like, s.wander, revision]);
 
@@ -216,6 +210,7 @@ export function LibraryView({ route }: { route: Route }) {
           {browse.map((c, i) => (
             <button key={c.id} className="tile" style={{ animationDelay: `${Math.min(i, 12) * 20}ms` }} onClick={() => set({ open: c.id })}>
               {c.type === 'image' && <div style={{ aspectRatio: '4 / 3' }}><CardArt card={c} /></div>}
+              {c.type !== 'image' && c.cover && <div className="tile-cover"><img src={c.cover} alt="" loading="lazy" /></div>}
               <div className="body">
                 <div className="kicker">{byline(c)}</div>
                 <h3>{c.title}</h3>

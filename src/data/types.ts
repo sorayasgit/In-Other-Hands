@@ -7,7 +7,9 @@ export type CardType =
   | 'book'
   | 'podcast'
   | 'video'
-  | 'highlight';
+  | 'highlight'
+  | 'song'
+  | 'recipe';
 
 export interface Source {
   name: string;
@@ -33,6 +35,8 @@ export interface Card {
   caption?: string;
   /** For images: text read off the picture. */
   ocr?: string;
+  /** A picture of the thing itself (a book cover, a photo), as a path under /public. */
+  cover?: string;
   /** For images: dominant colours, most dominant first. */
   palette?: string[];
   /** Where the user used it or who they shared it with. */
@@ -40,6 +44,23 @@ export interface Card {
   tags?: string[];
   collections?: string[];
   savedAt: string;
+  /** 'borrowed' = kept from Today's handful. Absent means 'mine'. (Named `origin` because `source`
+   * already describes where a card's content came from.) */
+  origin?: 'mine' | 'borrowed';
+  pieceId?: string;
+  /** How many hands a borrowed piece has passed through. */
+  hands?: number;
+  trail?: TrailEntry[];
+}
+
+/** Something a hand added to a piece. Anonymous by construction: no person, no time finer than a day. */
+export interface TrailEntry {
+  id: string;
+  kind: 'note' | 'image' | 'song';
+  text: string;
+  imageDataUrl?: string;
+  /** YYYY-MM-DD */
+  addedOn: string;
 }
 
 export const TYPE_LABEL: Record<CardType, string> = {
@@ -52,4 +73,6 @@ export const TYPE_LABEL: Record<CardType, string> = {
   podcast: 'Podcast',
   video: 'Video',
   highlight: 'Highlight',
+  song: 'Song',
+  recipe: 'Recipe',
 };

@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
-import { addCard, addEdge, addFrame, addNote, CARD_W, emptyCanvas, type Camera, type CanvasDoc } from './model';
+import { addCard, addEdge, addFrame, addNote, CARD_W, emptyCanvas, removeItems, type Camera, type CanvasDoc } from './model';
+import { buildFoldSpace, FOLD_SPACE_ID } from './seedFoldSpace';
 
 /**
  * Canvas persistence in localStorage: an index of canvases plus one key per document and one per
@@ -29,6 +30,7 @@ function readIndex(): CanvasSummary[] | undefined {
 
 let index: CanvasSummary[] = readIndex() ?? seed();
 const listeners = new Set<() => void>();
+ensureFoldSpace();
 
 function writeIndex() {
   try {
@@ -118,6 +120,20 @@ export function createCanvasFromCollection(name: string, itemIds: string[]): Can
   return doc;
 }
 
+/** Take a library card off every canvas it's on (when it leaves the library). Returns how many. */
+export function removeItemFromAllCanvases(itemId: string): number {
+  let touched = 0;
+  for (const { id } of index) {
+    const doc = loadCanvas(id);
+    if (!doc) continue;
+    const nodeIds = Object.values(doc.nodes).filter((n) => n.kind === 'card' && n.itemId === itemId).map((n) => n.id);
+    if (!nodeIds.length) continue;
+    saveCanvas(removeItems(doc, nodeIds));
+    touched++;
+  }
+  return touched;
+}
+
 /** Put a library card on a canvas (from outside the canvas view), to the right of what's there. */
 export function placeOnCanvas(canvasId: string, itemId: string) {
   const doc = loadCanvas(canvasId);
@@ -136,6 +152,21 @@ export function useCanvasList(): CanvasSummary[] {
     },
     () => index,
   );
+}
+
+/** Adds the sample research map once (also for libraries created before it existed). */
+function ensureFoldSpace() {
+  const FLAG = 'ioh.seed.foldspace.v1';
+  try {
+    if (localStorage.getItem(FLAG) || index.some((c) => c.id === FOLD_SPACE_ID)) return;
+    const doc = buildFoldSpace();
+    localStorage.setItem(docKey(doc.id), JSON.stringify(doc));
+    index = [summarize(doc), ...index];
+    localStorage.setItem(INDEX, JSON.stringify(index));
+    localStorage.setItem(FLAG, '1');
+  } catch {
+    /* storage unavailable: skip the sample */
+  }
 }
 
 /** First run: one canvas already in progress, so the space is never a blank slate. */

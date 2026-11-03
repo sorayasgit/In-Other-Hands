@@ -281,3 +281,27 @@ mark { background: var(--mark); color: inherit; border-radius: 2px; padding: 0 1
   .collections { padding: 28px 16px 60px; }
   .collection-title { font-size: 30px; }
 }
+
+/* Today's handful (the home page) is styled in src/ui/home.css. The piece panel stays here. */
+.piece-img { width: 100%; border-radius: 8px; margin: 14px 0; display: block; }
+.kept-mark { font-size: 13px; color: var(--accent); margin-right: 4px; }
+.trail { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.trail-item { border-left: 2px solid var(--hair-strong); padding: 2px 0 2px 14px; }
+.trail-item.is-mine { border-left-color: var(--accent); border-left-style: dashed; }
+.trail-label { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+.trail-label .btn { font-size: 11px; padding: 2px 8px; }
+.trail-item p { margin: 4px 0 0; font: 16px/1.5 var(--serif); color: var(--ink-2); }
+.trail-link { color: var(--muted); font-size: 13px; word-break: break-all; }
+.trail-img { display: block; max-width: 220px; width: 100%; border-radius: 6px; margin-top: 6px; }
+.trail-img.placeholder { height: 90px; background: linear-gradient(135deg, #e3d6b8, #8a8b5c 60%, #6b4a33); }
+.add-form { margin-top: 18px; padding: 14px; border: 1px dashed var(--hair-strong); border-radius: 10px; display: flex; flex-direction: column; gap: 10px; }
+.add-image { font-size: 13px; color: var(--ink-2); cursor: pointer; }
+.add-image input { display: none; }
+.add-song { display: flex; gap: 8px; flex-wrap: wrap; }
+.add-song input { flex: 1; min-width: 140px; border: 0; border-bottom: 1px solid var(--hair-strong); background: transparent; font: 15px var(--serif); color: var(--ink); padding: 4px 0; outline: none; }
+.add-form .actions { margin-top: 4px; }
+
+/* Book covers and other real pictures */
+.tile-cover { padding: 18px 18px 0; display: flex; justify-content: center; background: var(--paper-deep); }
+.tile-cover img { display: block; width: 62%; height: auto; box-shadow: 0 6px 16px rgba(40, 30, 20, 0.18); }
+.drawer-cover { display: block; width: 180px; height: auto; margin: 14px 0 6px; box-shadow: 0 6px 18px rgba(40, 30, 20, 0.18); }

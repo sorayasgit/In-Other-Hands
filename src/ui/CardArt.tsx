@@ -2,7 +2,7 @@ import type { Card } from '../data/types';
 
 /**
  * Sample image cards have no real photo, so they are drawn as an abstract composition from their
- * palette (deterministic per card). A real library would show the saved image here.
+ * palette (deterministic per card). Cards with a real picture (`cover`) show that instead.
  */
 
 function rng(seed: string) {
@@ -16,9 +16,11 @@ function rng(seed: string) {
 }
 
 export function CardArt({ card, ratio = 0.72 }: { card: Card; ratio?: number }) {
+  if (card.cover) return <img src={card.cover} alt={card.caption ?? card.title} style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover' }} />;
   const p = card.palette ?? ['#d9d2c3', '#b7ad9a', '#8a8170'];
   const r = rng(card.id);
   const h = 100 * ratio;
+  if (card.tags?.includes('pattern')) return <Halftone palette={p} h={h} seed={r} label={card.caption ?? card.title} />;
   const shapes = Array.from({ length: 5 }, (_, i) => {
     const color = p[(i + 1) % p.length];
     const kind = r();
@@ -37,6 +39,27 @@ export function CardArt({ card, ratio = 0.72 }: { card: Card; ratio?: number }) 
   );
 }
 
+/** Pattern studies: a halftone field whose dots swell toward a couple of soft centres. */
+function Halftone({ palette, h, seed, label }: { palette: string[]; h: number; seed: () => number; label: string }) {
+  const centres = [0, 1].map(() => ({ x: 20 + seed() * 60, y: h * (0.2 + seed() * 0.6) }));
+  const inks = palette.slice(1);
+  const dots = [];
+  for (let y = 3; y < h; y += 6) {
+    for (let x = 3 + ((y / 6) % 2) * 3; x < 100; x += 6) {
+      const near = Math.max(...centres.map((c) => 1 - Math.hypot(x - c.x, y - c.y) / 45));
+      const r = Math.max(0, near) * 2.9;
+      if (r < 0.35) continue;
+      dots.push(<circle key={`${x}-${y}`} cx={x} cy={y} r={r} fill={inks[Math.floor((x + y) / 18) % inks.length]} />);
+    }
+  }
+  return (
+    <svg viewBox={`0 0 100 ${h}`} preserveAspectRatio="xMidYMid slice" style={{ display: 'block', width: '100%', height: '100%' }} role="img" aria-label={label}>
+      <rect width="100" height={h} fill={palette[0]} />
+      {dots}
+    </svg>
+  );
+}
+
 const TYPE_GLYPH: Record<string, string> = {
   article: 'Aa',
   quote: '“',
@@ -46,9 +69,11 @@ const TYPE_GLYPH: Record<string, string> = {
   podcast: '◉',
   video: '▸',
   highlight: '❝',
+  song: '♪',
+  recipe: '❦',
 };
 
 export function CardThumb({ card }: { card: Card }) {
-  if (card.type === 'image') return <CardArt card={card} ratio={1} />;
+  if (card.type === 'image' || card.cover) return <CardArt card={card} ratio={1} />;
   return <span aria-hidden>{TYPE_GLYPH[card.type] ?? '·'}</span>;
 }

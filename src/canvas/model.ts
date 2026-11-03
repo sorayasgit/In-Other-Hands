@@ -28,6 +28,8 @@ export interface NoteNode {
   y: number;
   w: number;
   h: number;
+  /** How the note is drawn: plain ink text (default), a filled hub label, a "!" callout, or a big title. */
+  style?: 'text' | 'label' | 'callout' | 'title';
 }
 
 export type CanvasNode = CardNode | NoteNode;
@@ -46,6 +48,8 @@ export interface Frame {
   y: number;
   w: number;
   h: number;
+  /** 'ink' draws the outline in the link colour, as a loose loop around an idea. */
+  tone?: 'ink';
 }
 
 export interface CanvasDoc {
