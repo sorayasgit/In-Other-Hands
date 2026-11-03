@@ -1,4 +1,5 @@
 import type { Card } from '../data/types';
+import { Picture } from './Picture';
 
 /**
  * Sample image cards have no real photo, so they are drawn as an abstract composition from their
@@ -16,7 +17,7 @@ function rng(seed: string) {
 }
 
 export function CardArt({ card, ratio = 0.72 }: { card: Card; ratio?: number }) {
-  if (card.cover) return <img src={card.cover} alt={card.caption ?? card.title} style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover' }} />;
+  if (card.cover) return <Picture src={card.cover} alt={card.caption ?? card.title} style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover' }} />;
   const p = card.palette ?? ['#d9d2c3', '#b7ad9a', '#8a8170'];
   const r = rng(card.id);
   const h = 100 * ratio;

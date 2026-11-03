@@ -93,12 +93,13 @@
   {
     "id": "c09",
     "type": "image",
-    "title": "Harbour at dawn",
-    "source": { "name": "Saved from a photographer's site" },
-    "caption": "Fishing boats in a still harbour at dawn, pale blue water and sky, soft grey fog, a single white lighthouse.",
-    "palette": ["#9FB7C9", "#D9E2E8", "#5D7387", "#F4F1EA", "#2F3E4C"],
-    "tags": ["sea", "calm", "morning"],
+    "title": "Sunset over the front page",
+    "caption": "A New York Times front page from December 3, 2025, everything below the masthead painted over in a grainy gradient: charcoal at the top, through navy and lilac, to bright orange at the bottom.",
+    "ocr": "The New York Times. All the News That's Fit to Print. Wednesday, December 3, 2025",
+    "palette": ["#fdfdfc", "#323838", "#434659", "#e88948", "#968a92"],
+    "tags": ["gradient", "newspaper", "dusk"],
     "collections": ["Colour"],
+    "cover": "/pictures/nyt-front-page-gradient.webp",
     "savedAt": "2026-08-30T06:40:00Z"
   },
   {
@@ -116,11 +117,14 @@
   {
     "id": "c11",
     "type": "image",
-    "title": "Moss study",
-    "caption": "Close-up of moss and lichen on a stone wall, many shades of green, damp and velvety.",
-    "palette": ["#4F6B2E", "#8DA05A", "#2C3B1C", "#C3CC9B", "#6E7F46"],
-    "tags": ["nature", "texture"],
-    "collections": ["Colour"],
+    "title": "There Must Be More to Life Than This",
+    "source": { "name": "Open Doors Gallery", "author": "Anthony Gerace", "url": "https://opendoors.gallery/artworks/anthony-gerace/anthony-gerace-untitled-043" },
+    "description": "From Anthony Gerace's series There Must Be More to Life Than This: found vintage material reconfigured into unique, abstract gridded collages. Gerace is a Canadian artist in London whose work is concerned with the effect of time on objects and images.",
+    "caption": "A vintage photo of a woman in a white halter top against a blue sky, cut into a grid of squares with most of them replaced by flat blue, so she is only half there.",
+    "palette": ["#4888b4", "#2975aa", "#fbfcfd", "#88a8b7", "#d7ccb7"],
+    "tags": ["collage", "grid", "vintage", "blue"],
+    "collections": ["Colour", "Design Inspiration"],
+    "cover": "/pictures/gerace-blue-grid.webp",
     "savedAt": "2026-09-12T16:00:00Z"
   },
   {
@@ -220,12 +224,13 @@
   {
     "id": "c21",
     "type": "image",
-    "title": "Autumn market stall",
-    "caption": "Wooden crates of pumpkins, squash and chestnuts at an outdoor market, rich amber orange and walnut brown, hand-lettered price cards.",
-    "ocr": "SQUASH £2 · CHESTNUTS 500g",
-    "palette": ["#D2691E", "#6B4226", "#F0A04B", "#3E2A1E", "#E7D3B0"],
-    "tags": ["autumn", "food", "market"],
+    "title": "Sand Co. fabric swatch",
+    "caption": "A scanned swatch of stretchy fabric printed with smudged animal-print blotches in black, chocolate and rust on cream, 'Sand Co.' written on it in blue biro.",
+    "ocr": "Sand Co.",
+    "palette": ["#363334", "#e9d8b9", "#faf2db", "#58443b", "#876a57"],
+    "tags": ["textile", "print", "brown", "texture"],
     "collections": ["Colour"],
+    "cover": "/pictures/sand-co-fabric.webp",
     "savedAt": "2025-10-20T10:10:00Z"
   },
   {
@@ -294,11 +299,13 @@
   {
     "id": "c28",
     "type": "image",
-    "title": "Riso print test sheet",
-    "caption": "A risograph test print with overlapping fluorescent pink and teal circles on cream paper, slightly misregistered.",
-    "palette": ["#FF48B0", "#00838A", "#F5EBDD", "#7A5C9E", "#1F2A44"],
-    "tags": ["print", "colour", "texture"],
+    "title": "Jolene, a love supreme",
+    "caption": "A bakery's website on butter-yellow, framed in dark brown: a hand-drawn wordmark, a thin nav, and 'a Love Supreme' scrawled huge like a child wrote it, over a calm centred serif story.",
+    "ocr": "Jolene. Locations Reservations Shop Stories Contact. a Love Supreme. We opened Primeur in 2014 in a beautiful old garage on the side of a leafy back street in Hackney",
+    "palette": ["#5f350b", "#f4e0ab", "#cbb283", "#a79a7a"],
+    "tags": ["web", "handwriting", "typography", "bakery"],
     "collections": ["Design Inspiration", "Colour"],
+    "cover": "/pictures/jolene-a-love-supreme.png",
     "savedAt": "2026-05-25T18:45:00Z"
   },
   {
@@ -344,11 +351,12 @@
   {
     "id": "c33",
     "type": "image",
-    "title": "Bauhaus weaving sample",
-    "caption": "A geometric woven textile with blocks of ochre, rust, charcoal and off-white, strict grid, visible thread texture.",
-    "palette": ["#C08A2E", "#9C4A2A", "#3A3A38", "#EFE7D6", "#6D5B3E"],
-    "tags": ["textile", "bauhaus", "grid"],
-    "collections": ["Design Inspiration"],
+    "title": "Twelve squares of old magazines",
+    "caption": "A three-by-four grid of squares cut from vintage magazines: a woman's face, a pink shoe, a car, flat squares of blue, green and orange, houndstooth, a smile.",
+    "palette": ["#fffffe", "#8a9484", "#5a5447", "#bbb2a7", "#746c65"],
+    "tags": ["collage", "grid", "vintage"],
+    "collections": ["Design Inspiration", "On Collecting"],
+    "cover": "/pictures/vintage-grid-collage.webp",
     "savedAt": "2026-07-09T15:15:00Z"
   },
   {
@@ -455,11 +463,12 @@
   {
     "id": "c44",
     "type": "image",
-    "title": "Night train window",
-    "caption": "Reflections in a train window at night, deep navy and violet with blurred yellow station lights.",
-    "palette": ["#1B2340", "#4B3B78", "#E8C547", "#0E1322", "#8A7FB8"],
-    "tags": ["night", "travel", "mood"],
+    "title": "Everyday makeup, on a loop",
+    "caption": "A short looping video of an everyday makeup look being put on: soft skin, a little blush, a careful lip.",
+    "palette": ["#000000", "#f6f1dc", "#272621", "#ccc4b4", "#484438"],
+    "tags": ["makeup", "video", "beauty"],
     "collections": ["Colour"],
+    "cover": "/pictures/everyday-makeup.mp4",
     "savedAt": "2026-10-02T23:30:00Z"
   },
   {
@@ -527,12 +536,13 @@
   {
     "id": "c51",
     "type": "image",
-    "title": "Sketchbook spread",
-    "caption": "A page from a sketchbook with pencil thumbnails of chairs, coffee rings, and handwritten notes in the margins.",
-    "ocr": "too heavy? — try ash — ask Ada",
-    "palette": ["#EDE6D6", "#5A5148", "#A89A82", "#2B2622", "#C9B99A"],
-    "tags": ["sketching", "process", "furniture"],
-    "collections": ["Working notes"],
+    "title": "dianthus_superbus_composition_022",
+    "caption": "A zine spread in grey and black: on the left a half-circle wreath of line-drawn carnations, on the right a pale half-moon plate painted with a few small flowers.",
+    "ocr": "dianthus_superbus_composition_022",
+    "palette": ["#000000", "#f5f5f5", "#a9a9aa", "#d7d7d7", "#181818"],
+    "tags": ["zine", "drawing", "flowers", "print"],
+    "collections": ["Design Inspiration"],
+    "cover": "/pictures/dianthus-zine-spread.webp",
     "savedAt": "2025-11-12T20:00:00Z"
   },
   {
@@ -568,12 +578,13 @@
   {
     "id": "c55",
     "type": "image",
-    "title": "Clay tile samples",
-    "caption": "A grid of handmade clay tile samples in glazes of rust, burnt sienna, cocoa and cream, each labelled with a number.",
-    "ocr": "07 · 12 · 19 · 23",
-    "palette": ["#A0522D", "#6F3B22", "#E3D2B4", "#C2703D", "#4A2E1F"],
-    "tags": ["ceramics", "glaze", "samples"],
-    "collections": ["Colour"],
+    "title": "AKILA sample sale poster",
+    "caption": "A poster that is mostly a soft glowing rectangle, dark chocolate fading to rose at the edges, with small grey type and a swash script in the middle.",
+    "ocr": "AKILA 11.29.24 LA + NY Sample Sale. AKILA LA 3300 Sunset Blvd 11am-7pm. AKILA NY 138 Ludlow St 12pm-7pm. FDGS DTLA 767 Santee St 11am-6pm. Sunglasses for $60 / $80",
+    "palette": ["#0a0909", "#492822", "#a5a698", "#bcc9c5", "#764838"],
+    "tags": ["poster", "typography", "gradient"],
+    "collections": ["Colour", "Design Inspiration"],
+    "cover": "/pictures/akila-sample-sale.webp",
     "savedAt": "2026-08-11T14:30:00Z"
   },
   {
@@ -823,5 +834,29 @@
     "collections": ["Reading list"],
     "cover": "/covers/ex-wife.webp",
     "savedAt": "2026-08-22T21:40:00Z"
+  },
+  {
+    "id": "c80",
+    "type": "image",
+    "title": "A poster that is a word search",
+    "caption": "A pale yellow poster where every university faculty's name runs together as one long word-search grid of capitals, with a red pen circle around one hidden word.",
+    "ocr": "15. Smotra Sveučilišta Josipa Jurja Strossmayera. 9. i 10. prosinca 2011 godine. Poljoprivredni fakultet u Osijeku",
+    "palette": ["#f8f1b8", "#dbd5a4", "#a8c9ba", "#d79b84", "#bcb78e"],
+    "tags": ["poster", "typography", "grid"],
+    "collections": ["Design Inspiration"],
+    "cover": "/pictures/osijek-word-search-poster.webp",
+    "savedAt": "2026-09-28T11:20:00Z"
+  },
+  {
+    "id": "c81",
+    "type": "image",
+    "title": "Liana, 2024",
+    "caption": "A tall green poster woven from tiny vertical lines with a pale script showing through, and a small sepia photo of a little girl pinned in the middle with a blue edge.",
+    "ocr": "Liana Lund 2024",
+    "palette": ["#1a1a1a", "#98a875", "#7d8c69", "#5c654b", "#cab995"],
+    "tags": ["poster", "photo", "texture", "green"],
+    "collections": ["Design Inspiration"],
+    "cover": "/pictures/liana-poster.png",
+    "savedAt": "2026-10-05T16:45:00Z"
   }
 ]

@@ -303,5 +303,6 @@ mark { background: var(--mark); color: inherit; border-radius: 2px; padding: 0 1
 
 /* Book covers and other real pictures */
 .tile-cover { padding: 18px 18px 0; display: flex; justify-content: center; background: var(--paper-deep); }
-.tile-cover img { display: block; width: 62%; height: auto; box-shadow: 0 6px 16px rgba(40, 30, 20, 0.18); }
+.tile-cover :is(img, video) { display: block; width: 62%; height: auto; box-shadow: 0 6px 16px rgba(40, 30, 20, 0.18); }
+.tile-picture { display: block; width: 100%; height: auto; }
 .drawer-cover { display: block; width: 180px; height: auto; margin: 14px 0 6px; box-shadow: 0 6px 18px rgba(40, 30, 20, 0.18); }

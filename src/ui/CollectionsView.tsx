@@ -7,6 +7,7 @@ import { navigate, type Route } from '../router';
 import { engine, useSearchService } from '../search/searchService';
 import { centroid, type Vec } from '../search/vectors';
 import { CardArt } from './CardArt';
+import { Picture } from './Picture';
 import { formatBytes, IMAGE_RATIO, useImageFacts } from './collections/derive';
 import { boxOf, burst, fade, reducedMotion, retract, settle, zoomIn, zoomOut, type Box } from './collections/motion';
 import './collections.css';
@@ -528,7 +529,7 @@ function Tile({ card, index, layout, hidden, picked, manage, onOpen }: { card: C
 
   return (
     <button
-      className={`cl-tile cl-lift ${card.type === 'image' ? 'is-image' : card.cover ? 'is-image is-cover' : short ? 'is-mini' : 'is-text'} ${picked ? 'is-picked' : ''}`}
+      className={`cl-tile cl-lift ${card.cover ? 'is-image is-cover' : card.type === 'image' ? 'is-image' : short ? 'is-mini' : 'is-text'} ${picked ? 'is-picked' : ''}`}
       data-card={card.id}
       data-hero
       style={style}
@@ -536,10 +537,11 @@ function Tile({ card, index, layout, hidden, picked, manage, onOpen }: { card: C
       aria-label={card.title}
       aria-pressed={manage ? picked : undefined}
     >
-      {card.type === 'image' ? (
+      {card.cover ? (
+        // A real picture keeps its own proportions; drawn ones share the board's.
+        <Picture src={card.cover} alt="" lazy />
+      ) : card.type === 'image' ? (
         <CardArt card={card} ratio={IMAGE_RATIO} />
-      ) : card.cover ? (
-        <img src={card.cover} alt="" loading="lazy" />
       ) : (
         <>
           <b>{card.title}</b>
@@ -688,7 +690,7 @@ function TextDetail({ card }: { card: Card }) {
 
   return (
     <article className="cl-note">
-      {card.cover && <img className="cl-note-cover" src={card.cover} alt={`Cover of ${card.title}`} />}
+      {card.cover && <Picture className="cl-note-cover" src={card.cover} alt={`Cover of ${card.title}`} />}
       <h1
         ref={titleRef}
         contentEditable={editable}
@@ -732,10 +734,11 @@ function ActionPill({ card, collection, onToast }: { card: Card; collection: str
     }
   };
   const save = () => {
-    const blob = facts?.blob ?? new Blob([plain], { type: 'text/plain' });
+    const blob = facts?.file ?? facts?.blob ?? new Blob([plain], { type: 'text/plain' });
+    const ext = facts ? (blob.type.split('/')[1] ?? 'png').replace('jpeg', 'jpg') : 'txt';
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `${card.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}.${facts ? 'png' : 'txt'}`;
+    a.download = `${card.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}.${ext}`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
     onToast('Saved');

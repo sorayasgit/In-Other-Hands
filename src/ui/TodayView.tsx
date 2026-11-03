@@ -5,6 +5,7 @@ import { reencodeImage } from '../handful/image';
 import { handful, today, useHandful } from '../handful/store';
 import { navigate, type Route } from '../router';
 import { HandfulBoard, handsLabel } from './HandfulBoard';
+import { Picture } from './Picture';
 import './home.css';
 
 const KIND_LABEL: Record<Piece['kind'], string> = { book: 'Book', note: 'Note', quote: 'Quote', song: 'Song', recipe: 'Recipe', photo: 'Photo' };
@@ -120,7 +121,7 @@ function PiecePanel({ id, onClose, onReturned }: { id: string; onClose: () => vo
           <button className="btn quiet" onClick={onClose} aria-label="Close">✕</button>
         </div>
         <h1>{piece.title}</h1>
-        {piece.image && <img className="piece-img" src={pieceImageSrc(piece.image)} alt={piece.body} />}
+        {piece.image && <Picture className="piece-img" src={pieceImageSrc(piece.image)} alt={piece.body} />}
         {piece.kind === 'quote' ? <blockquote className="big-quote">{piece.body}</blockquote> : <p className="prose">{piece.body}</p>}
 
         <div className="actions">

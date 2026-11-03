@@ -4,6 +4,7 @@ import { collectionHref, href, navigate } from '../router';
 import { engine, useSearchService } from '../search/searchService';
 import { createCanvas, placeOnCanvas, useCanvasList } from '../canvas/store';
 import { CardArt, CardThumb } from './CardArt';
+import { Picture } from './Picture';
 import { byline, savedLabel } from './format';
 
 interface Props {
@@ -75,7 +76,7 @@ export function CardDrawer({ id, onClose, onOpen, onMoreLike, onSameTime, onPlac
             {card.palette && <div className="palette" aria-label="Palette">{card.palette.map((c) => <span key={c} style={{ background: c }} title={c} />)}</div>}
           </>
         )}
-        {card.type !== 'image' && card.cover && <img className="drawer-cover" src={card.cover} alt={`Cover of ${card.title}`} />}
+        {card.type !== 'image' && card.cover && <Picture className="drawer-cover" src={card.cover} alt={`Cover of ${card.title}`} />}
         {card.quote && <blockquote className="big-quote">“{card.quote}”</blockquote>}
         {card.description && <p className="prose">{card.description}</p>}
         {card.body && <p className="prose">{card.body}</p>}

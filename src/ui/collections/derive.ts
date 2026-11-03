@@ -2,6 +2,7 @@ import { createElement, useEffect, useState } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import type { Card } from '../../data/types';
 import { CardArt } from '../CardArt';
+import { isVideo } from '../Picture';
 
 /**
  * Derived, read-only facts about an image card, computed in the browser and cached for the session:
@@ -14,7 +15,10 @@ const RASTER_W = 1600;
 
 export interface ImageFacts {
   url: string;
+  /** A PNG of what's shown (a video's first frame), for the clipboard. */
   blob: Blob;
+  /** The saved file itself, when there is one. */
+  file?: Blob;
   width: number;
   height: number;
   bytes: number;
@@ -50,7 +54,19 @@ export function useImageFacts(card: Card | undefined): ImageFacts | undefined {
   return facts;
 }
 
-async function rasterize(card: Card): Promise<ImageFacts> {
+/** Something drawable with its own size: the picture, a video's first frame, or the drawn art. */
+async function source(card: Card): Promise<{ el: CanvasImageSource; width: number; height: number }> {
+  if (card.cover && isVideo(card.cover)) {
+    const v = document.createElement('video');
+    v.muted = true;
+    v.preload = 'auto';
+    v.src = card.cover;
+    await new Promise<void>((res, rej) => {
+      v.onloadeddata = () => res();
+      v.onerror = () => rej(new Error('video failed'));
+    });
+    return { el: v, width: v.videoWidth, height: v.videoHeight };
+  }
   const img = new Image();
   if (card.cover) {
     img.src = card.cover;
@@ -59,10 +75,13 @@ async function rasterize(card: Card): Promise<ImageFacts> {
     img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
   }
   await img.decode();
-
   // A real picture keeps its own size; a drawn one is rendered at a fixed width.
-  const width = card.cover ? img.naturalWidth : RASTER_W;
-  const height = card.cover ? img.naturalHeight : Math.round(RASTER_W * IMAGE_RATIO);
+  return card.cover ? { el: img, width: img.naturalWidth, height: img.naturalHeight } : { el: img, width: RASTER_W, height: Math.round(RASTER_W * IMAGE_RATIO) };
+}
+
+async function rasterize(card: Card): Promise<ImageFacts> {
+  const { el: img, width, height } = await source(card);
+  const file = card.cover ? await fetch(card.cover).then((r) => r.blob()) : undefined;
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
@@ -77,7 +96,7 @@ async function rasterize(card: Card): Promise<ImageFacts> {
   sctx.drawImage(img, 0, 0, small.width, small.height);
   const palette = quantize(sctx.getImageData(0, 0, small.width, small.height).data);
 
-  return { url: URL.createObjectURL(blob), blob, width, height, bytes: blob.size, palette, colorProfile: 'sRGB' };
+  return { url: URL.createObjectURL(blob), blob, file, width, height, bytes: (file ?? blob).size, palette, colorProfile: 'sRGB' };
 }
 
 /** 4-bit-per-channel buckets, most common first, merging near-duplicates; returns 4–6 colours. */

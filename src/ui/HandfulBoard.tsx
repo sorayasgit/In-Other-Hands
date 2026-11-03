@@ -1,6 +1,7 @@
 import { memo, useEffect, useRef, useState, type ReactNode } from 'react';
 import { seedFrom } from '../data/shuffle';
 import { pieceImageSrc, type Piece } from '../handful/handful';
+import { Picture } from './Picture';
 
 /**
  * Today's handful as a board of paper cards. Masonry via CSS grid: each pin spans as many 4px rows as its measured
@@ -131,7 +132,7 @@ const Pin = memo(function Pin({ piece, index, status, onOpen, onKeep }: { piece:
 // ── Visuals: only pieces that have something to look at get one ───────────────────────────────
 
 function Visual({ piece, seed }: { piece: Piece; seed: number }): ReactNode {
-  if (piece.image) return <img className="pin-img" src={pieceImageSrc(piece.image)} alt={piece.body} loading="lazy" />;
+  if (piece.image) return <Picture className="pin-img" src={pieceImageSrc(piece.image)} alt={piece.body} lazy />;
   if (piece.kind === 'song') {
     return (
       <span className="pin-vinyl-stage" style={{ aspectRatio: seed % 2 ? '1 / 1' : '4 / 5' }}>

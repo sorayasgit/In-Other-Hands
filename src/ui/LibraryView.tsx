@@ -7,6 +7,7 @@ import type { SearchResponse } from '../search/engine';
 import { engine, useSearchService } from '../search/searchService';
 import { parseRefinement, type Hint } from '../search/understand';
 import { CardArt, CardThumb } from './CardArt';
+import { Picture } from './Picture';
 import { CardDrawer } from './CardDrawer';
 import { byline, gist, savedLabel } from './format';
 import { Highlight } from './Highlight';
@@ -209,8 +210,9 @@ export function LibraryView({ route }: { route: Route }) {
         <div className="grid">
           {browse.map((c, i) => (
             <button key={c.id} className="tile" style={{ animationDelay: `${Math.min(i, 12) * 20}ms` }} onClick={() => set({ open: c.id })}>
-              {c.type === 'image' && <div style={{ aspectRatio: '4 / 3' }}><CardArt card={c} /></div>}
-              {c.type !== 'image' && c.cover && <div className="tile-cover"><img src={c.cover} alt="" loading="lazy" /></div>}
+              {c.type === 'image' && !c.cover && <div style={{ aspectRatio: '4 / 3' }}><CardArt card={c} /></div>}
+              {c.type === 'image' && c.cover && <Picture className="tile-picture" src={c.cover} alt="" lazy />}
+              {c.type !== 'image' && c.cover && <div className="tile-cover"><Picture src={c.cover} alt="" lazy /></div>}
               <div className="body">
                 <div className="kicker">{byline(c)}</div>
                 <h3>{c.title}</h3>

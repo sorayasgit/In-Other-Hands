@@ -105,7 +105,7 @@ body:has(.cl-overview) { background: #e9ebee; }
 }
 .cl-tile.is-image { aspect-ratio: 1 / 0.72; }
 .cl-tile.is-cover { aspect-ratio: auto; border-radius: 6px; }
-.cl-tile.is-cover img { display: block; width: 100%; height: auto; }
+.cl-tile.is-cover :is(img, video) { display: block; width: 100%; height: auto; }
 .cl-tile.is-text { padding: 14px 16px 16px; border-radius: 12px; }
 .cl-tile.is-mini { width: 72%; padding: 12px 14px; border-radius: 10px; }
 .cl-tile b { display: block; font: 700 13px/1.25 var(--cl-sans); letter-spacing: -0.015em; margin-bottom: 6px; }
