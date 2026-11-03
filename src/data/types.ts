@@ -35,7 +35,7 @@ export interface Card {
   caption?: string;
   /** For images: text read off the picture. */
   ocr?: string;
-  /** A picture of the thing itself (a book cover, a photo), as a path under /public. */
+  /** A picture of the thing itself (a book cover, a photo): a path under /public, or a data URL for a piece made here. */
   cover?: string;
   /** For images: dominant colours, most dominant first. */
   palette?: string[];

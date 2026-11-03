@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { library, useCard, useCollections, useLibrary } from '../data/store';
 import { collectionHref, href, navigate } from '../router';
 import { engine, useSearchService } from '../search/searchService';
-import { createCanvas, placeOnCanvas, useCanvasList } from '../canvas/store';
+import { createCanvas, placeOnCanvas, removeItemFromAllCanvases, useCanvasList } from '../canvas/store';
+import type { Card } from '../data/types';
 import { CardArt, CardThumb } from './CardArt';
 import { Picture } from './Picture';
 import { byline, savedLabel } from './format';
@@ -107,6 +108,8 @@ export function CardDrawer({ id, onClose, onOpen, onMoreLike, onSameTime, onPlac
           {onSameTime && <button className="btn" onClick={onSameTime}>Saved around then</button>}
         </div>
 
+        <DeleteCard card={card} canvases={onCanvases.length} onDeleted={onClose} />
+
         {onCanvases.length > 0 && (
           <section>
             <div className="kicker">On {onCanvases.length === 1 ? 'a canvas' : `${onCanvases.length} canvases`}</div>
@@ -150,6 +153,52 @@ export function CardDrawer({ id, onClose, onOpen, onMoreLike, onSameTime, onPlac
         )}
       </aside>
     </>
+  );
+}
+
+/**
+ * Deleting asks first, right here (no pop-up), and says what goes with it. A borrowed piece isn't
+ * deleted: it's returned, so it can travel on.
+ */
+function DeleteCard({ card, canvases, onDeleted }: { card: Card; canvases: number; onDeleted: () => void }) {
+  const [asking, setAsking] = useState(false);
+  useEffect(() => setAsking(false), [card.id]);
+  if (card.origin === 'borrowed' && card.pieceId) {
+    return (
+      <section className="drawer-delete">
+        <p className="byline">
+          This piece is borrowed. To let it go, <a href={href('/today', { piece: card.pieceId })}>return it</a> so it can reach someone else.
+        </p>
+      </section>
+    );
+  }
+  const also = [card.collections?.length ? `${card.collections.length === 1 ? 'its collection' : `${card.collections.length} collections`}` : '', canvases ? `${canvases === 1 ? 'a canvas' : `${canvases} canvases`}` : '']
+    .filter(Boolean)
+    .join(' and ');
+  return (
+    <section className="drawer-delete">
+      {asking ? (
+        <div role="alertdialog" aria-label={`Delete ${card.title}?`}>
+          <p className="byline">Delete “{card.title}”? It leaves your library{also ? `, ${also}` : ''}. This can’t be undone.</p>
+          <div className="actions">
+            <button
+              className="btn danger"
+              autoFocus
+              onClick={() => {
+                removeItemFromAllCanvases(card.id);
+                library.remove(card.id);
+                onDeleted();
+              }}
+            >
+              Delete
+            </button>
+            <button className="btn" onClick={() => setAsking(false)}>Keep it</button>
+          </div>
+        </div>
+      ) : (
+        <button className="btn drawer-delete-btn" onClick={() => setAsking(true)}>Delete from library</button>
+      )}
+    </section>
   );
 }
 

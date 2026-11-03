@@ -11,6 +11,7 @@ import { Picture } from './Picture';
 import { CardDrawer } from './CardDrawer';
 import { byline, gist, savedLabel } from './format';
 import { Highlight } from './Highlight';
+import { PunchStudio } from './PunchStudio';
 
 const EXAMPLES = ['the image with warm, earthy colours', 'a quote about how we learn', 'something I saved over the summer about technology', 'that idea about collecting without a reason'];
 const COLOR_HEX: Record<string, string> = { orange: '#E07B28', brown: '#6B4226', red: '#C0392B', blue: '#3E6FA8', green: '#5B8C3A', yellow: '#E8C547', pink: '#E86AA6', teal: '#0F8A8A', purple: '#6E4B9E', navy: '#1B2340', rust: '#A0522D', terracotta: '#C8692B', ochre: '#C08A2E', cream: '#F2E8D5', beige: '#E3D2B4' };
@@ -34,6 +35,7 @@ export function LibraryView({ route }: { route: Route }) {
   const { revision, status } = useSearchService();
   const [draft, setDraft] = useState(s.q);
   const [refineDraft, setRefineDraft] = useState('');
+  const [making, setMaking] = useState(false);
   const [response, setResponse] = useState<SearchResponse>();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -93,6 +95,15 @@ export function LibraryView({ route }: { route: Route }) {
 
   return (
     <main className="library">
+      {making && (
+        <PunchStudio
+          onClose={() => setMaking(false)}
+          onSaved={(card) => {
+            setMaking(false);
+            set({ q: undefined, r: undefined, like: undefined, wander: undefined, open: card.id });
+          }}
+        />
+      )}
       <div className="search">
         <div className="search-field">
           <input
@@ -166,6 +177,7 @@ export function LibraryView({ route }: { route: Route }) {
               <button className="btn quiet" onClick={() => set({ wander: String(Math.floor(Math.random() * 1e6)), like: undefined })}>
                 {s.wander ? 'Wander again' : 'Wander'}
               </button>
+              <button className="btn quiet" onClick={() => setMaking(true)}>+ New piece</button>
             </span>
           )}
           {searching && status !== 'ready' && <span>{status === 'loading' ? 'warming up meaning-based search…' : 'matching words only (model unavailable)'}</span>}

@@ -60,7 +60,8 @@ export const CanvasCard = memo(function CanvasCard({ node, card, selected, lod, 
           <b>{card.title}</b>
           <span>{byline(card)}</span>
         </div>
-        <div className="cv-art">
+        {/* a real picture keeps its own proportions; drawn sample art fills a 4:3 print */}
+        <div className={`cv-art ${card.cover ? 'is-natural' : ''}`}>
           <CardArt card={card} />
         </div>
       </div>

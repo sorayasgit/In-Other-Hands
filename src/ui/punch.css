@@ -1,0 +1,106 @@
+/* The hole-punch studio: a full-screen workbench in the home page's dress. */
+
+.ps {
+  position: fixed; inset: 0; z-index: 55; display: flex; flex-direction: column;
+  background: #291f18; color: #fef9e6; font-family: 'EB Garamond', Garamond, serif;
+  animation: ps-in 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes ps-in { from { opacity: 0; transform: translateY(18px); } }
+
+.ps-head { display: flex; align-items: baseline; gap: 16px; padding: 22px clamp(20px, 4vw, 48px) 18px; border-bottom: 1px solid rgba(254, 249, 230, 0.35); }
+.ps-head h2 { margin: 0; font: 400 26px/1 'BenguiatProITC-Book', 'Benguiat Pro ITC', 'EB Garamond', serif; }
+.ps-head > :last-child { margin-left: auto; }
+.ps-kicker, .ps h3 { font: 400 10px/1.4 'Source Code Pro', ui-monospace, monospace; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(254, 249, 230, 0.6); }
+.ps-ask { display: inline-flex; gap: 14px; align-items: baseline; font-size: 15px; }
+
+.ps-body { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 340px; }
+
+.ps-stage { position: relative; min-height: 0; display: grid; place-items: center; padding: clamp(16px, 3vw, 40px); container-type: size; }
+.ps-stage.is-over { background: rgba(254, 249, 230, 0.05); }
+/* as large as fits: the full width, or the full height times the piece's proportions */
+.ps-frame { position: relative; width: min(100cqw, calc(100cqh * var(--ratio))); }
+.ps-frame canvas { display: block; width: 100%; height: auto; border-radius: 3px; box-shadow: 0 18px 50px rgba(0, 0, 0, 0.4); touch-action: none; cursor: default; }
+.ps-frame canvas.is-picking { cursor: crosshair; }
+.ps-selected { position: absolute; border: 1px dashed rgba(254, 249, 230, 0.9); outline: 1px dashed rgba(36, 28, 22, 0.6); outline-offset: 1px; border-radius: 3px; pointer-events: none; }
+.ps-hint {
+  position: absolute; left: 50%; top: 14px; transform: translateX(-50%); padding: 6px 12px; border-radius: 999px;
+  background: rgba(36, 28, 22, 0.82); font: 400 11px 'Source Code Pro', monospace; white-space: nowrap; pointer-events: none;
+}
+.ps-drop {
+  display: grid; gap: 10px; justify-items: center; max-width: 420px; padding: 56px 40px; cursor: pointer;
+  border: 1px dashed rgba(254, 249, 230, 0.45); border-radius: 10px; background: transparent; color: inherit; text-align: center;
+  transition: background 200ms ease, border-color 200ms ease;
+}
+.ps-drop:hover, .ps-stage.is-over .ps-drop { background: rgba(254, 249, 230, 0.05); border-color: rgba(254, 249, 230, 0.8); }
+.ps-drop b { font: 400 24px 'BenguiatProITC-Book', 'Benguiat Pro ITC', 'EB Garamond', serif; }
+.ps-drop span { font-size: 15px; line-height: 1.5; color: rgba(254, 249, 230, 0.7); }
+.ps-err { position: absolute; bottom: 18px; margin: 0; font-size: 15px; color: #e8b6a6; }
+
+.ps-panel { overflow-y: auto; padding: 8px 28px 40px; border-left: 1px solid rgba(254, 249, 230, 0.18); }
+.ps-panel section { padding: 20px 0; border-bottom: 1px solid rgba(254, 249, 230, 0.12); display: grid; gap: 12px; transition: opacity 200ms ease; }
+.ps-panel section.is-off { opacity: 0.4; pointer-events: none; }
+.ps-panel h3 { margin: 0; }
+.ps-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+
+.ps-btn {
+  justify-self: start; padding: 7px 14px; border-radius: 999px; cursor: pointer; border: 1px solid rgba(254, 249, 230, 0.4);
+  background: transparent; color: inherit; font: 400 12px 'Source Code Pro', monospace; transition: background 150ms ease, border-color 150ms ease;
+}
+.ps-btn:hover:not(:disabled) { background: rgba(254, 249, 230, 0.08); border-color: rgba(254, 249, 230, 0.8); }
+.ps-btn:disabled { opacity: 0.4; cursor: default; }
+.ps-btn.is-on { background: #fef9e6; color: #291f18; }
+.ps-btn.is-solid { background: #c5c9b0; border-color: #c5c9b0; color: #241c16; }
+.ps-btn.is-solid:hover:not(:disabled) { background: #d3d6c0; }
+.ps-link { padding: 0; border: 0; background: none; cursor: pointer; color: inherit; font: 400 12px 'Source Code Pro', monospace; text-decoration: underline; text-underline-offset: 3px; opacity: 0.85; }
+.ps-link:hover { opacity: 1; }
+
+.ps-seg { display: inline-flex; gap: 2px; padding: 2px; border-radius: 8px; background: rgba(254, 249, 230, 0.08); justify-self: start; }
+.ps-seg button { display: grid; place-items: center; min-width: 34px; height: 28px; padding: 0 6px; border: 0; border-radius: 6px; background: transparent; color: rgba(254, 249, 230, 0.7); cursor: pointer; }
+.ps-seg button.on { background: #fef9e6; color: #291f18; }
+.ps-seg.is-text button { font: 400 11px 'Source Code Pro', monospace; padding: 0 9px; }
+
+.ps-swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+.ps-swatches button { width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%; cursor: pointer; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18); transition: transform 120ms ease; }
+.ps-swatches button:hover { transform: scale(1.12); }
+.ps-swatches button.on { box-shadow: 0 0 0 2px #291f18, 0 0 0 3.5px #fef9e6; }
+.ps-custom { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font: 400 12px 'Source Code Pro', monospace; }
+.ps-custom input { width: 26px; height: 26px; padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; }
+.ps-custom input::-webkit-color-swatch-wrapper { padding: 0; }
+.ps-custom input::-webkit-color-swatch { border: 1px solid rgba(254, 249, 230, 0.4); border-radius: 50%; }
+
+.ps-punch {
+  display: flex; align-items: center; justify-content: center; gap: 12px; height: 54px; border-radius: 12px; cursor: pointer;
+  border: 1px solid rgba(254, 249, 230, 0.35); background: rgba(254, 249, 230, 0.06); color: inherit; font: 400 18px 'EB Garamond', serif;
+  user-select: none; -webkit-user-select: none; touch-action: none; transition: background 150ms ease, transform 120ms ease;
+}
+.ps-punch:hover:not(:disabled) { background: rgba(254, 249, 230, 0.1); }
+.ps-punch:active:not(:disabled) { transform: scale(0.98); background: rgba(254, 249, 230, 0.16); }
+.ps-punch:disabled { opacity: 0.45; cursor: default; }
+.ps-punch-dot { width: 16px; height: 16px; border-radius: 50%; background: #fef9e6; box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.35); }
+.ps-punch:active .ps-punch-dot { animation: ps-thunk 170ms ease-in-out infinite alternate; }
+@keyframes ps-thunk { to { transform: scale(0.78); } }
+
+.ps-slider { display: grid; gap: 6px; font: 400 11px 'Source Code Pro', monospace; color: rgba(254, 249, 230, 0.75); }
+.ps-slider span { display: flex; justify-content: space-between; }
+.ps-slider b { font-weight: 400; color: #fef9e6; }
+.ps-slider input { width: 100%; accent-color: #c5c9b0; }
+
+.ps-words { display: grid; gap: 10px; padding: 12px; border-radius: 10px; background: rgba(254, 249, 230, 0.05); border: 1px solid transparent; }
+.ps-words.is-selected { border-color: rgba(254, 249, 230, 0.3); }
+.ps-words textarea, .ps-save input {
+  width: 100%; border: 0; border-bottom: 1px solid rgba(254, 249, 230, 0.3); background: transparent; color: inherit;
+  font: 400 17px/1.35 'EB Garamond', serif; resize: vertical; outline: none; padding: 2px 0 6px;
+}
+.ps-words textarea:focus, .ps-save input:focus { border-bottom-color: #fef9e6; }
+.ps-words textarea::placeholder, .ps-save input::placeholder { color: rgba(254, 249, 230, 0.4); }
+.ps-note { margin: 0; font: italic 14px 'EB Garamond', serif; color: rgba(254, 249, 230, 0.6); }
+.ps-save { border-bottom: 0 !important; }
+
+@media (max-width: 820px) {
+  .ps-body { grid-template-columns: 1fr; grid-template-rows: minmax(260px, 55vh) auto; overflow-y: auto; }
+  .ps-panel { border-left: 0; border-top: 1px solid rgba(254, 249, 230, 0.18); overflow: visible; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ps { animation: none; }
+  .ps-punch:active .ps-punch-dot { animation: none; }
+}
