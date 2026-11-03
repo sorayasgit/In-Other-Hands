@@ -25,6 +25,7 @@ export const SAMPLE_PURPOSES: Record<string, string> = {
   'Design Inspiration': 'For the start of any new visual brief.',
   'On Collecting': 'Material for the essay on why we gather things before we know why.',
   'Working notes': 'My own half-formed thoughts, to mine when I’m stuck.',
+  'Photobooks': 'Photobooks to look for in second-hand shops.',
   'Reading list': 'Pieces to read properly on a slow Sunday.',
   Listening: 'Episodes worth a second listen on a long walk.',
   Colour: 'Palette references for packaging and print.',
